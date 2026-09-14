@@ -3,10 +3,12 @@ import type {
   DefaultsSettings,
   DocumentNumberingSettings,
   DocumentPaymentSettings,
+  DocumentTemplateSettings,
   NotificationRoute,
   PlatformSettings,
   PrivacyNoticeSettings,
 } from "./types";
+import { DEFAULT_DOCUMENT_HEADER, DEFAULT_DOCUMENT_TEMPLATES } from "./document-templates";
 import { notificationEvents } from "./types";
 import {
   DEFAULT_CONTACT_DETAILS_EMAIL,
@@ -72,6 +74,19 @@ export const DEFAULT_PRIVACY_NOTICE: PrivacyNoticeSettings = {
   retentionBackups: "30 days in rolling backup systems, subject to earlier overwrite.",
 };
 
+export const DEFAULT_DOCUMENT_TEMPLATES_SETTINGS: DocumentTemplateSettings = {
+  header: { ...DEFAULT_DOCUMENT_HEADER },
+  orderSlip: {
+    ...DEFAULT_DOCUMENT_TEMPLATES.orderSlip,
+    deliveryPreferences: [...DEFAULT_DOCUMENT_TEMPLATES.orderSlip.deliveryPreferences],
+    paymentTerms: [...DEFAULT_DOCUMENT_TEMPLATES.orderSlip.paymentTerms],
+  },
+  salesInvoice: {
+    ...DEFAULT_DOCUMENT_TEMPLATES.salesInvoice,
+    modeOfPayment: [...DEFAULT_DOCUMENT_TEMPLATES.salesInvoice.modeOfPayment],
+  },
+};
+
 export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   businessProfile: { ...DEFAULT_BUSINESS_PROFILE },
   documentPayment: { ...DEFAULT_DOCUMENT_PAYMENT },
@@ -81,4 +96,5 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   },
   documentNumbering: { ...DEFAULT_DOCUMENT_NUMBERING },
   privacyNotice: { ...DEFAULT_PRIVACY_NOTICE },
+  documentTemplates: { ...DEFAULT_DOCUMENT_TEMPLATES_SETTINGS },
 };

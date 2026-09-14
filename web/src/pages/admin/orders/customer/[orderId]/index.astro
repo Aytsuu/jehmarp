@@ -6,6 +6,7 @@ import AdminPageFrame from "@/components/admin/AdminPageFrame.astro";
 import Tab from "@/components/ui/Tab.astro";
 import TabPanel from "@/components/ui/TabPanel.astro";
 import Tabs from "@/components/ui/Tabs.astro";
+import PdfLabeledField from "@/components/ui/PdfLabeledField.astro";
 import AlertDialog from "@/components/ui/AlertDialog.astro";
 import {
   formatAdminActionFeedback,
@@ -1171,16 +1172,14 @@ const orderNavigationEntries = buildOrderDetailNavEntries({
               <h3 class="pdf-preview-title">{orderSlipLayout.title}</h3>
             </header>
 
-            <div class="pdf-preview-fields pdf-preview-fields--two-column">
-              <div class="pdf-preview-field-line">
-                <span>{orderSlipLayout.dateLabel}</span>
-              </div>
-              <div></div>
-              <div class="pdf-preview-field-line">
-                <span>{orderSlipLayout.sellerLabel}</span>
-              </div>
-              <div class="pdf-preview-field-line">
-                <span>{orderSlipLayout.orderedByLabel}</span>
+            <div class="pdf-preview-fields">
+              <PdfLabeledField
+                field={orderSlipLayout.dateField}
+                class="pdf-preview-labeled-field--full"
+              />
+              <div class="pdf-preview-fields pdf-preview-fields--two-column">
+                <PdfLabeledField field={orderSlipLayout.sellerField} />
+                <PdfLabeledField field={orderSlipLayout.orderedByField} />
               </div>
             </div>
 
@@ -1216,7 +1215,11 @@ const orderNavigationEntries = buildOrderDetailNavEntries({
             </div>
 
             <div class="pdf-preview-total-row">
-              <span>{orderSlipLayout.totalLabel}</span>
+              <PdfLabeledField
+                field={orderSlipLayout.totalField}
+                class="pdf-preview-labeled-field--total"
+                valueUnderline={false}
+              />
             </div>
 
             <div class="pdf-preview-copy-block">
@@ -1228,6 +1231,11 @@ const orderNavigationEntries = buildOrderDetailNavEntries({
               <h4>{orderSlipLayout.paymentHeading}</h4>
               {orderSlipLayout.paymentLines.map((line) => <p>{line}</p>)}
             </div>
+
+            <p class="pdf-preview-payment-due">
+              <strong>{orderSlipLayout.paymentDueHeading}</strong>
+              {orderSlipLayout.paymentDueLine}
+            </p>
 
             <p class="pdf-preview-confirmation">
               {orderSlipLayout.confirmationText}
@@ -1246,11 +1254,12 @@ const orderNavigationEntries = buildOrderDetailNavEntries({
                 <p class="pdf-preview-signature-heading">
                   {orderSlipLayout.sellerSignatureHeading}
                 </p>
-                <p class="pdf-preview-signature-name">
-                  {orderSlipLayout.sellerSignatureLines[0]}
-                </p>
+                <PdfLabeledField
+                  field={orderSlipLayout.sellerNameField}
+                  class="pdf-preview-labeled-field--signature"
+                />
+                <p>{orderSlipLayout.sellerSignatureLines[0]}</p>
                 <p>{orderSlipLayout.sellerSignatureLines[1]}</p>
-                <p>{orderSlipLayout.sellerSignatureLines[2]}</p>
               </div>
             </footer>
           </div>
@@ -1327,18 +1336,14 @@ const orderNavigationEntries = buildOrderDetailNavEntries({
                     </h3>
                   </header>
 
-                  <div class="pdf-preview-fields pdf-preview-fields--two-column">
-                    <div class="pdf-preview-field-line">
-                      <span>{salesInvoiceLayout.dateLabel}</span>
-                    </div>
-                    <div class="pdf-preview-field-line">
-                      <span>{salesInvoiceLayout.invoiceNumberLabel}</span>
-                    </div>
-                    <div class="pdf-preview-field-line">
-                      <span>{salesInvoiceLayout.soldToLabel}</span>
-                    </div>
-                    <div class="pdf-preview-field-line">
-                      <span>{salesInvoiceLayout.addressLabel}</span>
+                  <div class="pdf-preview-fields">
+                    <PdfLabeledField
+                      field={salesInvoiceLayout.dateField}
+                      class="pdf-preview-labeled-field--full"
+                    />
+                    <div class="pdf-preview-fields pdf-preview-fields--two-column">
+                      <PdfLabeledField field={salesInvoiceLayout.soldToField} />
+                      <PdfLabeledField field={salesInvoiceLayout.addressField} />
                     </div>
                   </div>
 
@@ -1406,18 +1411,16 @@ const orderNavigationEntries = buildOrderDetailNavEntries({
                   </div>
 
                   <div class="pdf-preview-total-row">
-                    <span>{salesInvoiceLayout.totalLabel}</span>
+                    <PdfLabeledField
+                      field={salesInvoiceLayout.totalField}
+                      class="pdf-preview-labeled-field--total"
+                      valueUnderline={false}
+                    />
                   </div>
 
                   <div class="pdf-preview-copy-block">
-                    <h4>Delivery Preference</h4>
-                    <p>{salesInvoiceLayout.paymentLines[0]}</p>
-                    <p>{salesInvoiceLayout.paymentLines[1]}</p>
-                  </div>
-
-                  <div class="pdf-preview-copy-block">
-                    <h4>{salesInvoiceLayout.paymentHeading}</h4>
-                    <p>{salesInvoiceLayout.paymentLines[2]}</p>
+                    <h4>{salesInvoiceLayout.modeOfPaymentHeading}</h4>
+                    <p>{salesInvoiceLayout.modeOfPaymentLine}</p>
                   </div>
 
                   <footer class="pdf-preview-invoice-footer">
@@ -1447,8 +1450,7 @@ const orderNavigationEntries = buildOrderDetailNavEntries({
               <div class="payment-panel__intro">
                 <h3 class="payment-panel__title">Payment History</h3>
                 <p>
-                  Track payments made against this order, including
-                  agent-received payments awaiting confirmation.
+                  Track payments made against this order.
                 </p>
               </div>
               <button
@@ -1461,7 +1463,7 @@ const orderNavigationEntries = buildOrderDetailNavEntries({
                   <path d="M12 5v14"></path>
                   <path d="M5 12h14"></path>
                 </svg>
-                <span>Create Payment Record</span>
+                <span>Add Record</span>
               </button>
             </div>
 
@@ -3462,6 +3464,10 @@ const orderNavigationEntries = buildOrderDetailNavEntries({
     flex-direction: column;
     flex: 1;
     min-height: 0;
+    border-radius: 1.25rem;
+    border: 1px solid rgba(17, 24, 39, 0.08);
+    background: #ffffff;
+    padding: 1.5rem;
   }
 
   .order-notes-toolbar {
@@ -3618,8 +3624,8 @@ const orderNavigationEntries = buildOrderDetailNavEntries({
   }
 
   .payment-panel {
-    margin-top: 1rem;
-    border-top: 1px solid rgba(17, 24, 39, 0.08);
+    display: grid;
+    gap: 1rem;
   }
 
   .payment-panel__header {
@@ -3627,7 +3633,8 @@ const orderNavigationEntries = buildOrderDetailNavEntries({
     align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
-    padding: 0.95rem 0 0.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(17, 24, 39, 0.08);
   }
 
   .payment-panel__intro {

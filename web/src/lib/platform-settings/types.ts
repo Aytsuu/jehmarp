@@ -64,6 +64,31 @@ export type PrivacyNoticeSettings = {
   retentionBackups: string;
 };
 
+export type OrderSlipTemplateSettings = {
+  sellerName: string;
+  acceptedByName: string;
+  deliveryPreferences: string[];
+  paymentTerms: string[];
+};
+
+export type SalesInvoiceTemplateSettings = {
+  issuedByName: string;
+  issuedBySubline: string;
+  modeOfPayment: string[];
+};
+
+export type DocumentHeaderSettings = {
+  businessName: string;
+  address: string;
+  phoneLine: string;
+};
+
+export type DocumentTemplateSettings = {
+  header: DocumentHeaderSettings;
+  orderSlip: OrderSlipTemplateSettings;
+  salesInvoice: SalesInvoiceTemplateSettings;
+};
+
 export type PlatformSettings = {
   businessProfile: BusinessProfileSettings;
   documentPayment: DocumentPaymentSettings;
@@ -71,6 +96,13 @@ export type PlatformSettings = {
   notifications: NotificationsSettings;
   documentNumbering: DocumentNumberingSettings;
   privacyNotice: PrivacyNoticeSettings;
+  documentTemplates: DocumentTemplateSettings;
+};
+
+export type DocumentTemplateSettingsPatch = {
+  header?: Partial<DocumentHeaderSettings>;
+  orderSlip?: Partial<OrderSlipTemplateSettings>;
+  salesInvoice?: Partial<SalesInvoiceTemplateSettings>;
 };
 
 export type PlatformSettingsPatch = {
@@ -80,6 +112,7 @@ export type PlatformSettingsPatch = {
   notifications?: Partial<NotificationsSettings>;
   documentNumbering?: Partial<DocumentNumberingSettings>;
   privacyNotice?: Partial<PrivacyNoticeSettings>;
+  documentTemplates?: DocumentTemplateSettingsPatch;
 };
 
 export type DocumentLogoImage = {
@@ -92,5 +125,6 @@ export type DocumentLogoImage = {
 export type DocumentLayoutOptions = {
   businessProfile?: BusinessProfileSettings;
   documentPayment?: DocumentPaymentSettings;
+  documentTemplates?: DocumentTemplateSettings;
   logoImage?: DocumentLogoImage | null;
 };

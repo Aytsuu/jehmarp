@@ -1,0 +1,26 @@
+---
+import AdminSettingsAgentsTable from "@/components/admin/settings/AdminSettingsAgentsTable.astro";
+import { loadAdminAgentManagementData } from "@/lib/admin-dashboard/data";
+import {
+  mergeAdminPaginationQuery,
+  parseAdminPagination,
+} from "@/lib/admin-dashboard/pagination";
+import { requireAdminRoute } from "@/lib/admin-dashboard/page";
+import { setDashboardFragmentResponseHeaders } from "@/lib/dashboard/fragment-response";
+
+export const prerender = false;
+
+const adminRoute = await requireAdminRoute(Astro);
+
+if (!adminRoute.ready) {
+  return adminRoute.response;
+}
+
+setDashboardFragmentResponseHeaders(Astro);
+
+const pagination = parseAdminPagination(Astro.url);
+const paginationQuery = mergeAdminPaginationQuery("tab=accounts", pagination);
+const data = await loadAdminAgentManagementData({}, pagination);
+---
+
+<AdminSettingsAgentsTable data={data} paginationQuery={paginationQuery} />

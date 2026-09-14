@@ -62,14 +62,27 @@ describe("buildOrderSlipPdf", () => {
 
     expect(text.startsWith("%PDF-1.4")).toBe(true);
     expect(text).toContain("ORDER SLIP");
-    expect(text).toContain("JEHMARP");
-    expect(text).toContain("Seller: Ana Agent");
+    expect(text).toContain("Meat and Poultry Products");
+    expect(text).toContain("/F3 10 Tf");
+    expect(text).toContain("(ORDER SLIP)");
+    expect(text).toMatch(/\(ORDER SLIP\)[\s\S]*\/F3 8 Tf/);
+    expect(text).toContain("(Seller:)");
+    expect(text).toContain("(Narcisan S. Galamiton)");
     expect(text).toContain("Maria Santos");
     expect(text).toContain("Pork Belly");
     expect(text).toContain("Cut small");
-    expect(text).toContain("Total PHP 250.00");
-    expect(text).toContain("Name: Ana Agent");
-    expect(text).not.toContain("40 401 515 264 re S");
+    expect(text).toContain("(Total )");
+    expect(text).toContain("(250.00)");
+    expect(text).not.toContain("428.32 589 m");
+    expect(text).toContain("(Name:)");
+    expect(text).toContain("(Narcisan S. Galamiton)");
+    expect(text).toContain("Delivery Preference");
+    expect(text).toContain("Mode of Delivery:");
+    expect(text).toContain("Preferred Delivery Date and Time");
+    expect(text).toContain("Payment Due:");
+    expect(text).toContain("\\( \\) Upon Delivery  \\( \\) Within___days");
+    expect(text).toContain("/F2 8 Tf");
+    expect(text).toContain("I hereby confirm the above order");
     expect(text).toContain("%%EOF");
   });
 

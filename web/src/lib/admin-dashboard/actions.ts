@@ -1040,6 +1040,7 @@ export async function executeAdminAction(
       return;
     case "save-platform-settings-general":
     case "save-platform-settings-privacy":
+    case "save-platform-settings-templates":
     case "change-admin-password":
     case "send-agent-password-reset": {
       const { data: authData } = await supabase.auth.getUser();
@@ -4701,6 +4702,7 @@ function getActionSuccessMessage(action: AdminAction) {
       return "Notifications marked as read.";
     case "save-platform-settings-general":
     case "save-platform-settings-privacy":
+    case "save-platform-settings-templates":
     case "change-admin-password":
     case "send-agent-password-reset":
       return getPlatformSettingsActionSuccessMessage(action);

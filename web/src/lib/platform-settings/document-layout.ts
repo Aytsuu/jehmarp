@@ -6,6 +6,7 @@ export function toDocumentLayoutOptions(settings: PlatformSettings): DocumentLay
   return {
     businessProfile: settings.businessProfile,
     documentPayment: settings.documentPayment,
+    documentTemplates: settings.documentTemplates,
   };
 }
 

@@ -2,9 +2,14 @@
 import AdminSettingsPageLayout from "@/components/admin/AdminSettingsPageLayout.astro";
 import AdminSettingsGeneral from "@/components/admin/settings/AdminSettingsGeneral.astro";
 import AdminSettingsPrivacy from "@/components/admin/settings/AdminSettingsPrivacy.astro";
+import AdminSettingsTemplates from "@/components/admin/settings/AdminSettingsTemplates.astro";
 import AdminSettingsAccountsSecurity from "@/components/admin/settings/AdminSettingsAccountsSecurity.astro";
 import { formatAdminActionFeedback } from "@/lib/admin-dashboard/actions";
-import { loadAdminDashboardData, loadAdminSettingsAgents } from "@/lib/admin-dashboard/data";
+import { loadAdminAgentManagementData, loadAdminDashboardData } from "@/lib/admin-dashboard/data";
+import {
+  mergeAdminPaginationQuery,
+  parseAdminPagination,
+} from "@/lib/admin-dashboard/pagination";
 import { requireAdminRoute } from "@/lib/admin-dashboard/page";
 import { loadPlatformSettings } from "@/lib/platform-settings";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -18,13 +23,16 @@ const activeTab = (() => {
   const tab = Astro.url.searchParams.get("tab");
   if (tab === "accounts") return "accounts";
   if (tab === "privacy") return "privacy";
+  if (tab === "templates") return "templates";
   return "general";
 })();
 const feedback = formatAdminActionFeedback(Astro.url);
-const [data, settings, agents] = await Promise.all([
+const agentsPagination = parseAdminPagination(Astro.url);
+const agentsPaginationQuery = mergeAdminPaginationQuery("tab=accounts", agentsPagination);
+const [data, settings, agentsData] = await Promise.all([
   loadAdminDashboardData(),
   loadPlatformSettings(createSupabaseAdminClient()),
-  loadAdminSettingsAgents(),
+  loadAdminAgentManagementData({}, agentsPagination),
 ]);
 ---
 
@@ -63,13 +71,27 @@ const [data, settings, agents] = await Promise.all([
     <div
       class:list={[
         "admin-settings-page__tab-panel",
+        activeTab === "templates" && "is-active",
+      ]}
+      data-admin-settings-tab-panel="templates"
+      role="tabpanel"
+      hidden={activeTab !== "templates"}
+    >
+      <AdminSettingsTemplates settings={settings} />
+    </div>
+    <div
+      class:list={[
+        "admin-settings-page__tab-panel",
         activeTab === "accounts" && "is-active",
       ]}
       data-admin-settings-tab-panel="accounts"
       role="tabpanel"
       hidden={activeTab !== "accounts"}
     >
-      <AdminSettingsAccountsSecurity agents={agents} />
+      <AdminSettingsAccountsSecurity
+        agentsData={agentsData}
+        agentsPaginationQuery={agentsPaginationQuery}
+      />
     </div>
   </div>
 </AdminSettingsPageLayout>

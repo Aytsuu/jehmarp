@@ -1,0 +1,27 @@
+---
+import type { DocumentLabeledField } from "@/lib/order-documents/layout";
+
+type Props = {
+  field: DocumentLabeledField;
+  class?: string;
+  valueUnderline?: boolean;
+};
+
+const { field, class: className, valueUnderline = true } = Astro.props;
+const labelText = `${field.label}${field.labelSuffix ?? ":"}`;
+const hasValue = Boolean(field.value?.trim());
+---
+
+<div class:list={["pdf-preview-labeled-field", className]}>
+  <span class="pdf-preview-labeled-field__label">{labelText}</span>
+  <span
+    class:list={[
+      "pdf-preview-labeled-field__value",
+      hasValue && valueUnderline && "pdf-preview-labeled-field__value--filled",
+      hasValue && !valueUnderline && "pdf-preview-labeled-field__value--plain",
+      !hasValue && "pdf-preview-labeled-field__value--empty",
+    ]}
+  >
+    {hasValue ? field.value : "\u00A0"}
+  </span>
+</div>

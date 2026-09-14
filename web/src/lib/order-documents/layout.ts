@@ -1,13 +1,25 @@
 import type { DocumentOrder, DocumentOrderItem } from "@/lib/order-documents/view";
 import { fullName, orderTotal } from "@/lib/order-documents/view";
-import { getBrandLines as getSettingsBrandLines } from "@/lib/platform-settings/branding";
-import { formatDocumentPaymentLines, formatOrderSlipPaymentLines } from "@/lib/platform-settings/document-payment";
+import {
+  DEFAULT_ORDER_SLIP_TEMPLATE,
+  DEFAULT_SALES_INVOICE_TEMPLATE,
+  formatSalesInvoiceModeOfPaymentLine,
+  formatOrderSlipModeOfDeliveryLine,
+  formatOrderSlipPaymentTermsLine,
+  getDocumentHeaderBrandLines,
+} from "@/lib/platform-settings/document-templates";
 import type { DocumentLayoutOptions } from "@/lib/platform-settings/types";
 import { resolvePublicStorageUrl } from "@/lib/supabase/storage";
 
 const orderSlipColumnWidths = [145, 60, 75, 75, 160] as const;
 const salesInvoiceColumnWidths = [235, 80, 100, 100] as const;
 const defaultSellerName = "Narcisan S. Galamiton";
+
+export const ORDER_SLIP_PREFERRED_DELIVERY_DATE_LINE = "Preferred Delivery Date and Time: ___________________";
+export const ORDER_SLIP_PAYMENT_DUE_HEADING = "Payment Due:";
+export const ORDER_SLIP_PAYMENT_DUE_LINE = "( ) Upon Delivery  ( ) Within___days";
+export const ORDER_SLIP_CONFIRMATION_TEXT =
+  "I hereby confirm the above order and agree to the pricing, delivery arrangement, and payment terms stated herein.";
 
 export type DocumentTableColumn = {
   label: string;
@@ -19,23 +31,32 @@ export type DocumentTableRow = {
   cells: string[];
 };
 
+export type DocumentLabeledField = {
+  label: string;
+  value: string;
+  labelSuffix?: string;
+};
+
 export type OrderSlipLayout = {
   brandLines: string[];
   logoUrl: string | null;
   title: string;
-  dateLabel: string;
-  sellerLabel: string;
-  orderedByLabel: string;
+  dateField: DocumentLabeledField;
+  sellerField: DocumentLabeledField;
+  orderedByField: DocumentLabeledField;
   columns: DocumentTableColumn[];
   rows: DocumentTableRow[];
-  totalLabel: string;
+  totalField: DocumentLabeledField;
   deliveryHeading: string;
   deliveryLines: string[];
   paymentHeading: string;
   paymentLines: string[];
+  paymentDueHeading: string;
+  paymentDueLine: string;
   confirmationText: string;
   buyerSignatureLines: string[];
   sellerSignatureHeading: string;
+  sellerNameField: DocumentLabeledField;
   sellerSignatureLines: string[];
 };
 
@@ -43,29 +64,30 @@ export type SalesInvoiceLayout = {
   brandLines: string[];
   logoUrl: string | null;
   title: string;
-  dateLabel: string;
-  invoiceNumberLabel: string;
-  soldToLabel: string;
-  addressLabel: string;
+  dateField: DocumentLabeledField;
+  soldToField: DocumentLabeledField;
+  addressField: DocumentLabeledField;
   columns: DocumentTableColumn[];
   rows: DocumentTableRow[];
-  totalLabel: string;
-  paymentHeading: string;
-  paymentLines: string[];
+  totalField: DocumentLabeledField;
+  modeOfPaymentHeading: string;
+  modeOfPaymentLine: string;
   issuerHeading: string;
   issuerName: string;
   issuerSubline: string;
 };
 
 export function buildOrderSlipLayout(order: DocumentOrder, options: DocumentLayoutOptions = {}): OrderSlipLayout {
-  const sellerName = getSellerName(order, options);
+  const orderSlipTemplate = options.documentTemplates?.orderSlip ?? DEFAULT_ORDER_SLIP_TEMPLATE;
+  const sellerName = getSellerName(order, options, orderSlipTemplate.sellerName);
+  const acceptedByName = orderSlipTemplate.acceptedByName.trim() || sellerName;
   return {
-    brandLines: getBrandLines(options.businessProfile),
+    brandLines: getDocumentHeaderBrandLines(options.documentTemplates),
     logoUrl: resolveDocumentLogoUrl(options),
     title: "ORDER SLIP",
-    dateLabel: `Date: ${formatDocumentDate(order.created_at)}`,
-    sellerLabel: `Seller: ${sellerName}`,
-    orderedByLabel: `Ordered by: ${fullName(order.customer)}`,
+    dateField: { label: "Date", value: formatDocumentDate(order.created_at) },
+    sellerField: { label: "Seller", value: sellerName },
+    orderedByField: { label: "Ordered by", value: fullName(order.customer) },
     columns: [
       { label: "Product", width: orderSlipColumnWidths[0] },
       { label: "Quantity", width: orderSlipColumnWidths[1], align: "center" },
@@ -82,25 +104,32 @@ export function buildOrderSlipLayout(order: DocumentOrder, options: DocumentLayo
         item.add_details ?? "",
       ],
     })),
-    totalLabel: `Total ${formatMoney(orderTotal(order, "partial_quantity"))}`,
+    totalField: {
+      label: "Total",
+      value: formatMoney(orderTotal(order, "partial_quantity")),
+      labelSuffix: " ",
+    },
     deliveryHeading: "Delivery Preference",
     deliveryLines: [
-      "Mode of Delivery: ( ) Pick-Up   ( ) Delivery",
-      "Preferred Delivery Date and Time: ___________________",
+      formatOrderSlipModeOfDeliveryLine(orderSlipTemplate.deliveryPreferences),
+      ORDER_SLIP_PREFERRED_DELIVERY_DATE_LINE,
     ],
     paymentHeading: "Payment Terms (For Order Confirmation)",
-    paymentLines: formatOrderSlipPaymentLines(options.documentPayment),
-    confirmationText:
-      "I hereby confirm the above order and agree to the pricing, delivery arrangement, and payment terms stated herein.",
+    paymentLines: [
+      formatOrderSlipPaymentTermsLine(orderSlipTemplate.paymentTerms),
+    ],
+    paymentDueHeading: ORDER_SLIP_PAYMENT_DUE_HEADING,
+    paymentDueLine: ORDER_SLIP_PAYMENT_DUE_LINE,
+    confirmationText: ORDER_SLIP_CONFIRMATION_TEXT,
     buyerSignatureLines: [
       "Confirmed by (Buyer):",
       "Name: ________________________",
       "Signature: ___________________",
       "Date: ________________________",
     ],
-    sellerSignatureHeading: "Accepted by (Seller)",
+    sellerSignatureHeading: "Accepted by(Seller)",
+    sellerNameField: { label: "Name", value: acceptedByName },
     sellerSignatureLines: [
-      `Name: ${sellerName}`,
       "Signature: ___________________",
       "Date: ________________________",
     ],
@@ -110,16 +139,19 @@ export function buildOrderSlipLayout(order: DocumentOrder, options: DocumentLayo
 export function buildSalesInvoiceLayout(order: DocumentOrder, options: DocumentLayoutOptions = {}): SalesInvoiceLayout {
   const invoice = order.invoice[0];
   const payment = order.payment?.[0] ?? null;
-  const issuerName = getIssuerName(order, options);
-  const paymentDetailLines = formatDocumentPaymentLines(options.documentPayment);
+  const salesInvoiceTemplate = options.documentTemplates?.salesInvoice ?? DEFAULT_SALES_INVOICE_TEMPLATE;
+  const issuerName = getIssuerName(order, options, salesInvoiceTemplate.issuedByName);
+  const modeOfPaymentLine = formatSalesInvoiceModeOfPaymentLine(salesInvoiceTemplate.modeOfPayment, payment);
   return {
-    brandLines: getBrandLines(options.businessProfile),
+    brandLines: getDocumentHeaderBrandLines(options.documentTemplates),
     logoUrl: resolveDocumentLogoUrl(options),
     title: "SALES INVOICE",
-    dateLabel: `Date: ${formatDocumentDate(invoice?.issued_at ?? invoice?.created_at ?? order.created_at)}`,
-    invoiceNumberLabel: `Invoice No: ${invoice?.invoice_number ?? ""}`,
-    soldToLabel: `Sold to: ${fullName(order.customer)}`,
-    addressLabel: `Address: ${order.customer?.address ?? ""}`,
+    dateField: {
+      label: "Date",
+      value: formatDocumentDate(invoice?.issued_at ?? invoice?.created_at ?? order.created_at),
+    },
+    soldToField: { label: "Sold to", value: fullName(order.customer) },
+    addressField: { label: "Address", value: order.customer?.address ?? "" },
     columns: [
       { label: "Product", width: salesInvoiceColumnWidths[0] },
       { label: "Quantity", width: salesInvoiceColumnWidths[1], align: "center" },
@@ -134,22 +166,17 @@ export function buildSalesInvoiceLayout(order: DocumentOrder, options: DocumentL
         formatMoney(item.final_quantity * item.unit_price),
       ],
     })),
-    totalLabel: `Total Amount Due ${formatMoney(orderTotal(order, "final_quantity"))}`,
-    paymentHeading: "Payment Terms (For Order Confirmation)",
-    paymentLines: [
-      "Mode of Payment (/)",
-      `${paymentCheckbox(payment?.payment_method === "Cash")} Cash   ${paymentCheckbox(payment?.payment_method === "Check")} Check`,
-      `${paymentCheckbox(payment?.payment_terms === "Cash on Delivery (COD)")} Cash on Delivery (COD)  ${paymentCheckbox(payment?.payment_terms === "Bank Transfer")} Bank Transfer   ${paymentCheckbox(payment?.payment_terms === "Gcash")} Gcash`,
-      ...paymentDetailLines,
-    ],
+    totalField: {
+      label: "Total Amount Due",
+      value: formatMoney(orderTotal(order, "final_quantity")),
+      labelSuffix: " ",
+    },
+    modeOfPaymentHeading: "Mode of Payment (/)",
+    modeOfPaymentLine,
     issuerHeading: "Issued by:",
     issuerName,
-    issuerSubline: "Owner / Authorized Representative",
+    issuerSubline: salesInvoiceTemplate.issuedBySubline,
   };
-}
-
-function paymentCheckbox(checked: boolean) {
-  return checked ? "(✓)" : "( )";
 }
 
 export function getDocumentColumnTemplate(columns: DocumentTableColumn[]) {
@@ -159,22 +186,36 @@ export function getDocumentColumnTemplate(columns: DocumentTableColumn[]) {
     .join(" ");
 }
 
-export function getBrandLines(profile?: DocumentLayoutOptions["businessProfile"]) {
-  return getSettingsBrandLines(profile);
-}
-
 export function resolveDocumentLogoUrl(options: DocumentLayoutOptions = {}) {
   return resolvePublicStorageUrl(options.businessProfile?.logoPath ?? null);
 }
 
-export function getSellerName(order: DocumentOrder, options: DocumentLayoutOptions = {}) {
+export function getSellerName(
+  order: DocumentOrder,
+  options: DocumentLayoutOptions = {},
+  templateSellerName?: string,
+) {
+  const configuredSeller = templateSellerName?.trim();
+  if (configuredSeller) {
+    return configuredSeller;
+  }
+
   return order.agent?.display_name
     ?? options.businessProfile?.legalName?.trim()
     ?? options.businessProfile?.tradeName?.trim()
     ?? defaultSellerName;
 }
 
-function getIssuerName(order: DocumentOrder, options: DocumentLayoutOptions = {}) {
+function getIssuerName(
+  order: DocumentOrder,
+  options: DocumentLayoutOptions = {},
+  templateIssuerName?: string,
+) {
+  const configuredIssuer = templateIssuerName?.trim();
+  if (configuredIssuer) {
+    return configuredIssuer;
+  }
+
   return options.businessProfile?.legalName?.trim()
     || options.businessProfile?.tradeName?.trim()
     || getSellerName(order, options);
@@ -185,7 +226,7 @@ export function formatDocumentDate(value: string | null) {
 }
 
 export function formatMoney(value: number) {
-  return `PHP ${value.toFixed(2)}`;
+  return value.toFixed(2);
 }
 
 export function formatQuantity(value: number) {

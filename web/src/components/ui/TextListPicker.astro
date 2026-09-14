@@ -1,0 +1,71 @@
+---
+type Props = {
+  name: string;
+  values: string[];
+  placeholder?: string;
+  inputLabel?: string;
+  required?: boolean;
+  class?: string;
+};
+
+const {
+  name,
+  values,
+  placeholder = "Type and press Enter to add",
+  inputLabel = "Add item",
+  required = false,
+  class: className = "",
+} = Astro.props;
+
+const initialValues = values.map((value) => value.trim()).filter(Boolean);
+const hiddenValue = initialValues.join("\n");
+---
+
+<div
+  class:list={[
+    "ui-picker",
+    "order-customer-picker",
+    "order-customer-picker--multiple",
+    "text-list-picker",
+    className,
+  ]}
+  data-text-list-picker
+>
+  <div class="ui-picker__control" data-ui-picker-control>
+    <div class="ui-picker__badges" data-text-list-picker-badges>
+      {
+        initialValues.map((value) => (
+          <span class="ui-picker__badge" data-text-list-badge={value}>
+            <span class="ui-picker__badge-label">{value}</span>
+            <button
+              type="button"
+              class="ui-picker__badge-remove"
+              data-text-list-remove
+              aria-label={`Remove ${value}`}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18 6 6 18"></path>
+                <path d="m6 6 12 12"></path>
+              </svg>
+            </button>
+          </span>
+        ))
+      }
+    </div>
+    <input
+      class="ui-picker__search"
+      type="text"
+      autocomplete="off"
+      placeholder={placeholder}
+      aria-label={inputLabel}
+      data-text-list-picker-input
+    />
+  </div>
+  <input
+    type="hidden"
+    name={name}
+    value={hiddenValue}
+    data-text-list-picker-hidden
+    required={required}
+  />
+</div>

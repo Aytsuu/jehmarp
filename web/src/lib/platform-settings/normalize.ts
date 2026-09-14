@@ -3,9 +3,11 @@ import {
   DEFAULT_DEFAULTS,
   DEFAULT_DOCUMENT_NUMBERING,
   DEFAULT_DOCUMENT_PAYMENT,
+  DEFAULT_DOCUMENT_TEMPLATES_SETTINGS,
   DEFAULT_NOTIFICATION_ROUTES,
   DEFAULT_PRIVACY_NOTICE,
 } from "./defaults";
+import { normalizeDocumentTemplates } from "./document-templates";
 import type {
   BusinessProfileSettings,
   DefaultsSettings,
@@ -171,6 +173,7 @@ export function normalizePlatformSettings(value: unknown): PlatformSettings {
       notifications: normalizeNotifications(null),
       documentNumbering: { ...DEFAULT_DOCUMENT_NUMBERING },
       privacyNotice: { ...DEFAULT_PRIVACY_NOTICE },
+      documentTemplates: { ...DEFAULT_DOCUMENT_TEMPLATES_SETTINGS },
     };
   }
   const record = value as Record<string, unknown>;
@@ -190,6 +193,7 @@ export function normalizePlatformSettings(value: unknown): PlatformSettings {
     notifications,
     documentNumbering: normalizeDocumentNumbering(record.documentNumbering),
     privacyNotice: normalizePrivacyNotice(record.privacyNotice),
+    documentTemplates: normalizeDocumentTemplates(record.documentTemplates),
   };
 }
 
@@ -213,5 +217,20 @@ export function mergePlatformSettings(current: PlatformSettings, patch: Platform
     privacyNotice: patch.privacyNotice
       ? normalizePrivacyNotice({ ...current.privacyNotice, ...patch.privacyNotice })
       : current.privacyNotice,
+    documentTemplates: patch.documentTemplates
+      ? normalizeDocumentTemplates({
+        ...current.documentTemplates,
+        ...patch.documentTemplates,
+        header: patch.documentTemplates.header
+          ? { ...current.documentTemplates.header, ...patch.documentTemplates.header }
+          : current.documentTemplates.header,
+        orderSlip: patch.documentTemplates.orderSlip
+          ? { ...current.documentTemplates.orderSlip, ...patch.documentTemplates.orderSlip }
+          : current.documentTemplates.orderSlip,
+        salesInvoice: patch.documentTemplates.salesInvoice
+          ? { ...current.documentTemplates.salesInvoice, ...patch.documentTemplates.salesInvoice }
+          : current.documentTemplates.salesInvoice,
+      })
+      : current.documentTemplates,
   };
 }

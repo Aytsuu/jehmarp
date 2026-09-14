@@ -2,8 +2,10 @@ import {
   loadPlatformSettings,
   normalizeBusinessProfile,
   normalizeDefaults,
+  normalizeDocumentTemplates,
   normalizeNotifications,
   normalizePrivacyNotice,
+  parseTemplateLines,
   savePlatformSettings,
 } from "@/lib/platform-settings";
 import { syncContactDetailsFromBusinessProfile } from "@/lib/platform-settings/contact-sync";
@@ -107,12 +109,17 @@ export type PlatformSettingsAdminAction =
       type: "save-platform-settings-privacy";
       privacyNotice: ReturnType<typeof normalizePrivacyNotice>;
     }
+  | {
+      type: "save-platform-settings-templates";
+      documentTemplates: ReturnType<typeof normalizeDocumentTemplates>;
+    }
   | { type: "change-admin-password"; currentPassword: string; newPassword: string; confirmPassword: string }
   | { type: "send-agent-password-reset"; agentId: string };
 
 const PLATFORM_ACTIONS = [
   "save-platform-settings-general",
   "save-platform-settings-privacy",
+  "save-platform-settings-templates",
   "change-admin-password",
   "send-agent-password-reset",
 ] as const;
@@ -201,6 +208,28 @@ export function parsePlatformSettingsAdminAction(actionName: string, formData: F
         }),
       };
     }
+    case "save-platform-settings-templates":
+      return {
+        type: "save-platform-settings-templates",
+        documentTemplates: normalizeDocumentTemplates({
+          header: {
+            businessName: requiredString(formData, "documentHeaderBusinessName"),
+            address: requiredString(formData, "documentHeaderAddress"),
+            phoneLine: requiredString(formData, "documentHeaderPhoneLine"),
+          },
+          orderSlip: {
+            sellerName: requiredString(formData, "orderSlipSellerName"),
+            acceptedByName: optionalString(formData, "orderSlipAcceptedByName"),
+            deliveryPreferences: parseTemplateLines(requiredString(formData, "orderSlipDeliveryPreferences")),
+            paymentTerms: parseTemplateLines(requiredString(formData, "orderSlipPaymentTerms")),
+          },
+          salesInvoice: {
+            issuedByName: optionalString(formData, "salesInvoiceIssuedByName"),
+            issuedBySubline: requiredString(formData, "salesInvoiceIssuedBySubline"),
+            modeOfPayment: parseTemplateLines(requiredString(formData, "salesInvoiceModeOfPayment")),
+          },
+        }),
+      };
     case "change-admin-password": {
       const currentPassword = requiredString(formData, "currentPassword");
       const newPassword = requiredString(formData, "newPassword");
@@ -225,6 +254,8 @@ export function getPlatformSettingsActionSuccessMessage(action: PlatformSettings
       return "Settings saved.";
     case "save-platform-settings-privacy":
       return "Privacy notice settings saved.";
+    case "save-platform-settings-templates":
+      return "Document template settings saved.";
     case "change-admin-password":
       return "Password updated.";
     case "send-agent-password-reset":
@@ -245,6 +276,9 @@ export async function executePlatformSettingsAdminAction(
       return executeGeneralSettingsSave(adminClient, action, adminUserId);
     case "save-platform-settings-privacy":
       await savePlatformSettings(adminClient, { privacyNotice: action.privacyNotice }, adminUserId);
+      return;
+    case "save-platform-settings-templates":
+      await savePlatformSettings(adminClient, { documentTemplates: action.documentTemplates }, adminUserId);
       return;
     case "change-admin-password":
       await executeAdminPasswordChange(supabase, action, options.adminEmail);

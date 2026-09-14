@@ -2,6 +2,7 @@ import type { DocumentLogoImage } from "@/lib/platform-settings/types";
 
 export const pdfPageWidth = 595;
 export const pdfPageHeight = 842;
+export const documentTableTopY = 680;
 
 export type BuildPdfDocumentOptions = {
   logoImage?: DocumentLogoImage | null;
@@ -20,17 +21,21 @@ export function buildPdfDocument(
   options: BuildPdfDocumentOptions = {},
 ): Uint8Array {
   const logoImage = options.logoImage ?? null;
-  const fontObjectId = 3;
-  const logoObjectId = logoImage ? 4 : null;
-  const firstPageObjectId = logoImage ? 5 : 4;
+  const fontRegularObjectId = 3;
+  const fontObliqueObjectId = 4;
+  const fontBoldObjectId = 5;
+  const logoObjectId = logoImage ? 6 : null;
+  const firstPageObjectId = logoImage ? 7 : 6;
   const pageObjectIds = contentStreams.map((_, index) => firstPageObjectId + index * 2);
   const pageResources = logoImage
-    ? `<< /Font << /F1 ${fontObjectId} 0 R >> /XObject << /${logoImage.name} ${logoObjectId} 0 R >> >>`
-    : `<< /Font << /F1 ${fontObjectId} 0 R >> >>`;
+    ? `<< /Font << /F1 ${fontRegularObjectId} 0 R /F2 ${fontObliqueObjectId} 0 R /F3 ${fontBoldObjectId} 0 R >> /XObject << /${logoImage.name} ${logoObjectId} 0 R >> >>`
+    : `<< /Font << /F1 ${fontRegularObjectId} 0 R /F2 ${fontObliqueObjectId} 0 R /F3 ${fontBoldObjectId} 0 R >> >>`;
   const objects: PdfObjectBody[] = [
     "<< /Type /Catalog /Pages 2 0 R >>",
     `<< /Type /Pages /Kids [${pageObjectIds.map((id) => `${id} 0 R`).join(" ")}] /Count ${contentStreams.length} >>`,
     "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>",
   ];
 
   if (logoImage) {

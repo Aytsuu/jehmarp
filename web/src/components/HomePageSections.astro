@@ -301,10 +301,58 @@ const featuredProductsList =
         <div class="home-container">
           <section
             class="mission-section"
+            data-mission-section
             aria-label="Mission, Vision, and Core Values"
           >
+            <div
+              class="mission-section__tabs"
+              role="tablist"
+              aria-label="Mission, Vision, and Core Values"
+            >
+              <button
+                type="button"
+                class="mission-section__tab is-active"
+                role="tab"
+                id="mission-tab-mission"
+                aria-selected="true"
+                aria-controls="mission-panel-mission"
+                data-mission-tab="mission"
+              >
+                Mission
+              </button>
+              <button
+                type="button"
+                class="mission-section__tab"
+                role="tab"
+                id="mission-tab-vision"
+                aria-selected="false"
+                aria-controls="mission-panel-vision"
+                data-mission-tab="vision"
+                tabindex="-1"
+              >
+                Vision
+              </button>
+              <button
+                type="button"
+                class="mission-section__tab"
+                role="tab"
+                id="mission-tab-values"
+                aria-selected="false"
+                aria-controls="mission-panel-values"
+                data-mission-tab="values"
+                tabindex="-1"
+              >
+                Core Values
+              </button>
+            </div>
             <div class="mission-section__grid">
-              <article class="mission-card mission-card--mission">
+              <article
+                class="mission-card mission-card--mission is-active"
+                id="mission-panel-mission"
+                role="tabpanel"
+                aria-labelledby="mission-tab-mission"
+                data-mission-panel="mission"
+              >
                 <div class="mission-card__icon-wrapper">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -338,7 +386,13 @@ const featuredProductsList =
                   />
                 </AdminContentEditable>
               </article>
-              <article class="mission-card mission-card--vision">
+              <article
+                class="mission-card mission-card--vision"
+                id="mission-panel-vision"
+                role="tabpanel"
+                aria-labelledby="mission-tab-vision"
+                data-mission-panel="vision"
+              >
                 <div class="mission-card__icon-wrapper">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -371,7 +425,13 @@ const featuredProductsList =
                   />
                 </AdminContentEditable>
               </article>
-              <article class="mission-card mission-card--values">
+              <article
+                class="mission-card mission-card--values"
+                id="mission-panel-values"
+                role="tabpanel"
+                aria-labelledby="mission-tab-values"
+                data-mission-panel="values"
+              >
                 <div class="mission-card__icon-wrapper">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -539,7 +599,7 @@ const featuredProductsList =
                     }
                     <a
                       href={linkHref(`/shop?category=${category.shopCategory}`)}
-                      class="category-range-card__button"
+                      class="public-pill-button public-pill-button--brand"
                     >
                       Show more
                     </a>
@@ -1055,5 +1115,56 @@ const featuredProductsList =
     });
   }
 
+  function initMissionTabs() {
+    document.querySelectorAll<HTMLElement>("[data-mission-section]").forEach((section) => {
+      if (section.dataset.missionTabsBound === "true") {
+        return;
+      }
+
+      const tabs = Array.from(
+        section.querySelectorAll<HTMLButtonElement>("[data-mission-tab]"),
+      );
+      const panels = Array.from(
+        section.querySelectorAll<HTMLElement>("[data-mission-panel]"),
+      );
+
+      if (tabs.length === 0 || panels.length === 0) {
+        return;
+      }
+
+      const activateTab = (tabId: string) => {
+        tabs.forEach((tab) => {
+          const isActive = tab.dataset.missionTab === tabId;
+          tab.classList.toggle("is-active", isActive);
+          tab.setAttribute("aria-selected", String(isActive));
+          tab.tabIndex = isActive ? 0 : -1;
+        });
+
+        panels.forEach((panel) => {
+          const isActive = panel.dataset.missionPanel === tabId;
+          panel.classList.toggle("is-active", isActive);
+        });
+
+        window.dispatchEvent(new Event("resize"));
+      };
+
+      tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const tabId = tab.dataset.missionTab;
+          if (!tabId || tab.classList.contains("is-active")) {
+            return;
+          }
+
+          activateTab(tabId);
+        });
+      });
+
+      section.dataset.missionTabsBound = "true";
+    });
+  }
+
   initMissionTextExpand();
+  initMissionTabs();
+  document.addEventListener("astro:after-swap", initMissionTextExpand);
+  document.addEventListener("astro:after-swap", initMissionTabs);
 </script>

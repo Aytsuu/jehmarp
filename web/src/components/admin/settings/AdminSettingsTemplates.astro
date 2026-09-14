@@ -1,0 +1,253 @@
+---
+import type { PlatformSettings } from "@/lib/platform-settings";
+import Button from "@/components/ui/Button.astro";
+import TextListPicker from "@/components/ui/TextListPicker.astro";
+
+type Props = {
+  settings: PlatformSettings;
+};
+
+const { settings } = Astro.props;
+const documentHeader = settings.documentTemplates.header;
+const orderSlip = settings.documentTemplates.orderSlip;
+const salesInvoice = settings.documentTemplates.salesInvoice;
+---
+
+<section class="admin-settings-card" data-admin-settings-templates>
+  <header class="admin-settings-card__header">
+    <div class="admin-settings-card__heading-row">
+      <div class="admin-settings-card__heading-copy">
+        <h3>Document templates</h3>
+        <p>
+          Edit the fixed content shown on generated order slips and sales invoices.
+          Type each list item and press Enter to add it.
+        </p>
+      </div>
+      <Button
+        type="submit"
+        class="admin-settings-card__save-button"
+        data-settings-save-button
+        form="admin-settings-templates-form"
+        disabled
+      >
+        Save changes
+      </Button>
+    </div>
+    <p class="admin-settings-save-status" data-settings-save-status aria-live="polite" hidden></p>
+  </header>
+
+  <form
+    id="admin-settings-templates-form"
+    class="admin-form admin-settings-form"
+    data-settings-templates-form
+  >
+    <div class="admin-settings-section-row">
+      <div class="admin-settings-section-row__intro">
+        <h4>Document header</h4>
+        <p>Centered business details shown at the top of order slips and sales invoices.</p>
+      </div>
+      <div class="admin-settings-section-row__content admin-settings-profile-fields">
+        <label class="field-row">
+          <span>Business name</span>
+          <input
+            name="documentHeaderBusinessName"
+            type="text"
+            required
+            value={documentHeader.businessName}
+          />
+        </label>
+        <label class="field-row">
+          <span>Address</span>
+          <input
+            name="documentHeaderAddress"
+            type="text"
+            required
+            value={documentHeader.address}
+          />
+        </label>
+        <label class="field-row">
+          <span>Phone line</span>
+          <input
+            name="documentHeaderPhoneLine"
+            type="text"
+            required
+            value={documentHeader.phoneLine}
+          />
+        </label>
+      </div>
+    </div>
+
+    <div class="admin-settings-section-row">
+      <div class="admin-settings-section-row__intro">
+        <h4>Order slip</h4>
+        <p>Seller details, mode of delivery, and payment terms printed on order slips.</p>
+      </div>
+      <div class="admin-settings-section-row__content admin-settings-profile-fields">
+        <label class="field-row">
+          <span>Seller</span>
+          <input name="orderSlipSellerName" type="text" required value={orderSlip.sellerName} />
+        </label>
+        <label class="field-row">
+          <span>Accepted by (name only)</span>
+          <input
+            name="orderSlipAcceptedByName"
+            type="text"
+            value={orderSlip.acceptedByName}
+          />
+        </label>
+        <label class="field-row">
+          <span>Mode of delivery</span>
+          <TextListPicker
+            name="orderSlipDeliveryPreferences"
+            values={orderSlip.deliveryPreferences}
+            placeholder="Type a delivery option and press Enter"
+            inputLabel="Add mode of delivery option"
+            required
+          />
+        </label>
+        <label class="field-row">
+          <span>Payment terms</span>
+          <TextListPicker
+            name="orderSlipPaymentTerms"
+            values={orderSlip.paymentTerms}
+            placeholder="Type a payment term and press Enter"
+            inputLabel="Add payment term"
+            required
+          />
+        </label>
+      </div>
+    </div>
+
+    <div class="admin-settings-section-row">
+      <div class="admin-settings-section-row__intro">
+        <h4>Sales invoice</h4>
+        <p>Issuer details and mode-of-payment options printed on sales invoices.</p>
+      </div>
+      <div class="admin-settings-section-row__content admin-settings-profile-fields">
+        <label class="field-row">
+          <span>Issued by</span>
+          <input
+            name="salesInvoiceIssuedByName"
+            type="text"
+            value={salesInvoice.issuedByName}
+          />
+        </label>
+        <label class="field-row">
+          <span>Issued by subline</span>
+          <input
+            name="salesInvoiceIssuedBySubline"
+            type="text"
+            required
+            value={salesInvoice.issuedBySubline}
+          />
+        </label>
+        <label class="field-row">
+          <span>Mode of payment</span>
+          <TextListPicker
+            name="salesInvoiceModeOfPayment"
+            values={salesInvoice.modeOfPayment}
+            placeholder="Type a payment option and press Enter"
+            inputLabel="Add mode of payment option"
+            required
+          />
+        </label>
+      </div>
+    </div>
+  </form>
+</section>
+
+<script>
+  import { initAdminSettingsTemplates } from "@/lib/client/admin-settings-templates-editor";
+
+  function init() {
+    initAdminSettingsTemplates(document);
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("astro:after-swap", init);
+  if (document.readyState === "complete" || document.readyState === "interactive") {
+    init();
+  }
+</script>
+
+<style>
+  .admin-settings-card {
+    min-width: 0;
+    max-width: 100%;
+    display: grid;
+    gap: 0;
+  }
+
+  .admin-settings-card__header {
+    display: grid;
+    gap: 0.35rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .admin-settings-card__header h3,
+  .admin-settings-card__heading-copy p {
+    margin: 0;
+  }
+
+  .admin-settings-card__header h3 {
+    font-size: 1.2rem;
+    line-height: 1.16;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: #111827;
+  }
+
+  .admin-settings-card__heading-copy p {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: rgba(75, 85, 99, 0.9);
+  }
+
+  .admin-settings-card__heading-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .admin-settings-card__save-button {
+    flex-shrink: 0;
+    align-self: center;
+  }
+
+  .admin-settings-save-status {
+    margin: 0.75rem 0 0;
+    font-size: 0.8125rem;
+    color: #6b7280;
+  }
+
+  .admin-settings-save-status[data-state="saved"] {
+    color: #15803d;
+  }
+
+  .admin-settings-save-status[data-state="error"] {
+    color: #b91c1c;
+  }
+
+  .admin-settings-form {
+    display: grid;
+    gap: 0;
+    border: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  .admin-settings-profile-fields {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .admin-settings-form :global(.field-row) {
+    max-width: 36rem;
+  }
+
+  .admin-settings-form :global(.text-list-picker .ui-picker__control) {
+    cursor: text;
+  }
+</style>

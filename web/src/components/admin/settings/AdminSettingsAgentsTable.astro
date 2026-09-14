@@ -1,0 +1,246 @@
+---
+import ActionMenu from "@/components/ActionMenu.astro";
+import DashboardTableActionsHeader from "@/components/dashboard/DashboardTableActionsHeader.astro";
+import DashboardTableBoard from "@/components/dashboard/DashboardTableBoard.astro";
+import DashboardTableEmptyState from "@/components/dashboard/DashboardTableEmptyState.astro";
+import DashboardTablePagination from "@/components/dashboard/DashboardTablePagination.astro";
+import type { AdminAgentManagementData } from "@/lib/admin-dashboard/data";
+
+type Props = {
+  data: AdminAgentManagementData;
+  paginationQuery: string;
+};
+
+const { data, paginationQuery } = Astro.props;
+const skeletonRows = Array.from({ length: 6 });
+---
+
+<div
+  data-interactive-table
+  data-server-pagination="true"
+  class="dashboard-interactive-table admin-settings-agents-interactive-table"
+>
+  <form
+    method="get"
+    action="/admin/settings"
+    data-settings-agents-pagination-form
+    data-current-filter-query={paginationQuery}
+    hidden
+    aria-hidden="true"
+  >
+    <input type="hidden" name="tab" value="accounts" />
+  </form>
+
+  <div data-settings-agents-table-shell class="dashboard-interactive-table__surface">
+    <DashboardTableBoard>
+      <table class="dashboard-table admin-settings-agents-table">
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Email</th>
+            <th scope="col">Employee ID</th>
+            <th scope="col">Contact</th>
+            <DashboardTableActionsHeader />
+          </tr>
+        </thead>
+        <tbody>
+          {
+            data.agents.length === 0 ? (
+              <DashboardTableEmptyState colspan={5} message="No agent accounts found." />
+            ) : (
+              data.agents.map((agent) => {
+                const isActive = agent.status === "active";
+
+                return (
+                  <tr data-agent-id={agent.id} data-agent-status={isActive ? "active" : "inactive"}>
+                    <td class="dashboard-table__cell--truncate">{agent.display_name}</td>
+                    <td class="dashboard-table__cell--truncate">{agent.email ?? "No email"}</td>
+                    <td class="dashboard-table__cell--truncate">{agent.employee_id ?? "—"}</td>
+                    <td class="dashboard-table__cell--truncate">{agent.contact ?? "—"}</td>
+                    <td class="dashboard-table__actions-column">
+                      <span class="sr-only" data-settings-agent-status>
+                        {isActive ? "Active" : "Inactive"}
+                      </span>
+                      <ActionMenu
+                        menuLabel={`Actions for ${agent.display_name}`}
+                        items={[
+                          {
+                            label: isActive ? "Deactivate" : "Activate",
+                            dataAction: "toggle-agent-status",
+                          },
+                          {
+                            label: "Reset password",
+                            dataAction: "reset-agent-password",
+                            disabled: !agent.email,
+                          },
+                        ]}
+                      />
+                    </td>
+                  </tr>
+                );
+              })
+            )
+          }
+        </tbody>
+      </table>
+    </DashboardTableBoard>
+  </div>
+
+  <DashboardTablePagination pagination={data.pagination} />
+</div>
+
+<template data-settings-agents-pagination-skeleton>
+  <DashboardTableBoard aria-busy="true" aria-live="polite">
+    <table class="product-table-skeleton dashboard-table admin-settings-agents-table">
+      <caption class="sr-only">Loading agent accounts</caption>
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Email</th>
+          <th scope="col">Employee ID</th>
+          <th scope="col">Contact</th>
+          <DashboardTableActionsHeader />
+        </tr>
+      </thead>
+      <tbody>
+        {
+          skeletonRows.map(() => (
+            <tr>
+              <td><span class="table-skeleton-block"></span></td>
+              <td><span class="table-skeleton-block"></span></td>
+              <td><span class="table-skeleton-block table-skeleton-block--short"></span></td>
+              <td><span class="table-skeleton-block table-skeleton-block--short"></span></td>
+              <td><span class="table-skeleton-block table-skeleton-block--short"></span></td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </DashboardTableBoard>
+</template>
+
+<script>
+  import { initDashboardFragmentTable } from "@/lib/client/dashboard-fragment-table";
+  import { initAdminSettingsAgents } from "@/lib/client/admin-settings-agents";
+
+  function syncSettingsAgentMenuItems(section: HTMLElement) {
+    section.querySelectorAll<HTMLElement>("[data-action-menu-item][data-action='toggle-agent-status']").forEach((item) => {
+      const row = item.closest<HTMLTableRowElement>("tr[data-agent-id]");
+      const nextStatus = row?.dataset.agentStatus === "active" ? "inactive" : "active";
+      item.dataset.nextStatus = nextStatus;
+    });
+  }
+
+  function initSettingsAgentsTable() {
+    const section = document.querySelector<HTMLElement>("[data-admin-settings-agents]");
+    if (!section) {
+      return;
+    }
+
+    syncSettingsAgentMenuItems(section);
+    initAdminSettingsAgents(section);
+
+    initDashboardFragmentTable({
+      cacheKey: "admin-settings-agents-pagination-cache-v1",
+      fragmentPath: "/admin/settings-accounts-fragment",
+      pagePath: "/admin/settings",
+      formSelector: "[data-settings-agents-pagination-form]",
+      tableShellSelector: "[data-settings-agents-table-shell]",
+      skeletonTemplateSelector: "[data-settings-agents-pagination-skeleton]",
+      filterKeys: ["tab"],
+      historyStateKey: "settingsAgentsPaginationQuery",
+      updatedEvents: ["admin-settings-agents-table-updated"],
+    });
+  }
+
+  document.addEventListener("admin-settings-agents-table-updated", () => {
+    const section = document.querySelector<HTMLElement>("[data-admin-settings-agents]");
+    if (!section) {
+      return;
+    }
+
+    syncSettingsAgentMenuItems(section);
+  });
+
+  document.addEventListener("DOMContentLoaded", initSettingsAgentsTable);
+  document.addEventListener("astro:after-swap", initSettingsAgentsTable);
+  if (document.readyState === "complete" || document.readyState === "interactive") {
+    initSettingsAgentsTable();
+  }
+</script>
+
+<style>
+  .admin-settings-agents-interactive-table {
+    --dashboard-page-inset-x: 1rem;
+    --admin-settings-agents-row-height: 3rem;
+    --admin-settings-agents-visible-rows: 10;
+    --admin-settings-agents-table-height: calc(
+      var(--admin-settings-agents-row-height) * (var(--admin-settings-agents-visible-rows) + 1)
+    );
+    width: 100%;
+    max-width: 56rem;
+    min-width: 0;
+    gap: 0.75rem;
+  }
+
+  .admin-settings-agents-interactive-table .dashboard-interactive-table__surface {
+    flex: none;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    height: var(--admin-settings-agents-table-height);
+    min-height: var(--admin-settings-agents-table-height);
+    max-height: var(--admin-settings-agents-table-height);
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    background: #ffffff;
+  }
+
+  .admin-settings-agents-interactive-table .dashboard-table-board {
+    height: 100%;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: none;
+  }
+
+  .admin-settings-agents-table {
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+  }
+
+  .admin-settings-agents-table :global(th),
+  .admin-settings-agents-table :global(td) {
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    padding: 0.75rem 0.875rem;
+  }
+
+  .admin-settings-agents-table :global(th:first-child),
+  .admin-settings-agents-table :global(td:first-child) {
+    padding-left: var(--dashboard-page-inset-x);
+  }
+
+  .admin-settings-agents-table :global(.dashboard-table__actions-column) {
+    width: auto;
+    min-width: 2rem;
+    max-width: none;
+    padding-right: var(--dashboard-page-inset-x);
+  }
+
+  .admin-settings-agents-interactive-table :global(.dashboard-interactive-table__footer) {
+    min-height: 0;
+    border-top: 0;
+    background: transparent;
+  }
+
+  .admin-settings-agents-interactive-table :global(.dashboard-interactive-table__footer .table-pagination) {
+    padding: 0;
+  }
+
+  .admin-settings-agents-interactive-table :global(.table-pagination__limit) {
+    display: none;
+  }
+</style>

@@ -29,6 +29,18 @@ function cloneDefaults(): PlatformSettings {
     notifications: { routes: DEFAULT_PLATFORM_SETTINGS.notifications.routes.map((route) => ({ ...route })) },
     documentNumbering: { ...DEFAULT_PLATFORM_SETTINGS.documentNumbering },
     privacyNotice: { ...DEFAULT_PLATFORM_SETTINGS.privacyNotice },
+    documentTemplates: {
+      header: { ...DEFAULT_PLATFORM_SETTINGS.documentTemplates.header },
+      orderSlip: {
+        ...DEFAULT_PLATFORM_SETTINGS.documentTemplates.orderSlip,
+        deliveryPreferences: [...DEFAULT_PLATFORM_SETTINGS.documentTemplates.orderSlip.deliveryPreferences],
+        paymentTerms: [...DEFAULT_PLATFORM_SETTINGS.documentTemplates.orderSlip.paymentTerms],
+      },
+      salesInvoice: {
+        ...DEFAULT_PLATFORM_SETTINGS.documentTemplates.salesInvoice,
+        modeOfPayment: [...DEFAULT_PLATFORM_SETTINGS.documentTemplates.salesInvoice.modeOfPayment],
+      },
+    },
   };
 }
 

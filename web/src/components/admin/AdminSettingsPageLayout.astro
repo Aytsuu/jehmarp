@@ -12,7 +12,7 @@ import { adminDashboardRoutes } from "@/config/navigation";
 import DashboardLayout from "@/layouts/DashboardLayout.astro";
 import { getDashboardPageAvailability } from "@/lib/page-availability";
 
-export type AdminSettingsTab = "general" | "privacy" | "accounts";
+export type AdminSettingsTab = "general" | "privacy" | "templates" | "accounts";
 
 type Props = {
   title: string;
@@ -43,6 +43,7 @@ const isPageReady = pageAvailability.status === "ready";
 const tabs: Array<{ id: AdminSettingsTab; label: string }> = [
   { id: "general", label: "General" },
   { id: "privacy", label: "Privacy notice" },
+  { id: "templates", label: "Templates" },
   { id: "accounts", label: "Account & security" },
 ];
 ---

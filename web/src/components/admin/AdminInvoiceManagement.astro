@@ -5,6 +5,8 @@ import DashboardTableEmptyState from "@/components/dashboard/DashboardTableEmpty
 import DashboardTableNumberHeader from "@/components/dashboard/DashboardTableNumberHeader.astro";
 import DashboardTablePagination from "@/components/dashboard/DashboardTablePagination.astro";
 import TableActionMenu from "@/components/TableActionMenu.astro";
+import TableRowActionsModal from "@/components/TableRowActionsModal.astro";
+import Modal from "@/components/ui/Modal.astro";
 import type { AdminInvoiceManagementData } from "@/lib/admin-dashboard/data";
 import type { AdminInvoiceFilters } from "@/lib/admin-dashboard/invoice-filters";
 import { invoiceBalanceStatuses } from "@/lib/admin-dashboard/invoice-filters";
@@ -26,7 +28,12 @@ function formatBalanceStatus(status: (typeof invoiceBalanceStatuses)[number]) {
 }
 ---
 
-<section id="admin-invoices" class="admin-panel" aria-labelledby="admin-invoices-title">
+<section
+  id="admin-invoices"
+  class="admin-panel"
+  data-admin-invoices-page
+  aria-labelledby="admin-invoices-title"
+>
   <div data-interactive-table data-server-pagination="true" class="dashboard-interactive-table">
     <div class="table-filters order-management-toolbar">
       <form
@@ -37,26 +44,60 @@ function formatBalanceStatus(status: (typeof invoiceBalanceStatuses)[number]) {
         data-current-filter-query={filterQuery}
         aria-label="Filter invoices"
       >
-        <div class="order-filter-form__field order-filter-form__field--search">
-          <input
-            name="search"
-            type="search"
-            value={activeFilters.search ?? ""}
-            placeholder="Search invoice number or customer name..."
-            autocomplete="off"
-            aria-label="Search invoices"
-            data-invoice-search-input
-          />
+        <div class="product-filter-form__search-row">
+          <div class="order-filter-form__field order-filter-form__field--search">
+            <input
+              name="search"
+              type="search"
+              value={activeFilters.search ?? ""}
+              placeholder="Search invoice number or customer name..."
+              autocomplete="off"
+              aria-label="Search invoices"
+              data-invoice-search-input
+            />
+          </div>
+          <div class="product-filter-form__toolbar-actions">
+            <button
+              type="button"
+              class="product-filter-form__icon-trigger"
+              data-invoice-filter-modal-trigger
+              data-open-dashboard-modal="invoice-filters-modal"
+              aria-label="Open invoice filters"
+              aria-pressed="false"
+              aria-controls="invoice-filters-modal"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+              </svg>
+            </button>
+          </div>
         </div>
-        <div class="order-filter-form__field">
-          <select name="balanceStatus" aria-label="Filter by balance status">
-            <option value="">All balances</option>
-            {invoiceBalanceStatuses.map((status) => (
-              <option value={status} selected={activeFilters.balanceStatus === status}>
-                {formatBalanceStatus(status)}
-              </option>
-            ))}
-          </select>
+        <div class="product-filter-form__advanced-filters">
+          <div class="order-filter-form__field">
+            <select
+              name="balanceStatus"
+              data-invoice-filter-field="balanceStatus"
+              aria-label="Filter by balance status"
+            >
+              <option value="">All balances</option>
+              {invoiceBalanceStatuses.map((status) => (
+                <option value={status} selected={activeFilters.balanceStatus === status}>
+                  {formatBalanceStatus(status)}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </form>
     </div>
@@ -104,6 +145,7 @@ function formatBalanceStatus(status: (typeof invoiceBalanceStatuses)[number]) {
                       menuLabel={`Open actions for ${invoice.invoice_number}`}
                       pdfHref={salesInvoicePdfHref}
                       detailsHref={orderDetailsHref}
+                      mobileModalId="invoice-row-actions-modal"
                     />
                   </td>
                 </tr>
@@ -150,12 +192,48 @@ function formatBalanceStatus(status: (typeof invoiceBalanceStatuses)[number]) {
       </table>
     </DashboardTableBoard>
   </template>
+
+  <TableRowActionsModal
+    id="invoice-row-actions-modal"
+    title="Invoice actions"
+    description="Choose an action for this invoice."
+  />
+
+  <Modal
+    id="invoice-filters-modal"
+    title="Filter invoices"
+    description="Narrow invoices by balance status."
+  >
+    <div class="product-filter-modal">
+      <label class="product-filter-modal__field">
+        <span class="product-filter-modal__label">Balance status</span>
+        <select data-invoice-filter-field="balanceStatus" aria-label="Filter by balance status">
+          <option value="">All balances</option>
+          {invoiceBalanceStatuses.map((status) => (
+            <option value={status} selected={activeFilters.balanceStatus === status}>
+              {formatBalanceStatus(status)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div class="product-filter-modal__actions">
+        <button type="button" class="product-filter-modal__clear" data-invoice-filter-modal-clear>
+          Clear
+        </button>
+        <button type="button" class="product-filter-modal__apply" data-invoice-filter-modal-apply>
+          Apply filters
+        </button>
+      </div>
+    </div>
+  </Modal>
 </section>
 
 <script>
+  import { initDashboardFilterModals } from "@/lib/client/dashboard-filter-modal";
   import { initDashboardFragmentTable } from "@/lib/client/dashboard-fragment-table";
 
   function initAdminInvoiceFilters() {
+    initDashboardFilterModals();
     initDashboardFragmentTable({
       cacheKey: "admin-invoices-filter-cache-v2",
       fragmentPath: "/admin/invoices-fragment",

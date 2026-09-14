@@ -1,3 +1,5 @@
+import { syncAdminMobileSidebarToggleIcon } from "@/lib/client/dashboard-admin-mobile-sidebar";
+
 export function isDashboardNavItemActive(pathname: string, href: string) {
   if (pathname === href) {
     return true;
@@ -23,6 +25,8 @@ export function syncDashboardNavActiveState(pathname = window.location.pathname)
         link.removeAttribute("aria-current");
       }
     });
+
+  syncAdminMobileSidebarToggleIcon();
 }
 
 export function setOptimisticDashboardNavActive(link: HTMLAnchorElement) {

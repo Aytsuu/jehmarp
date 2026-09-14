@@ -1,16 +1,15 @@
 ---
-import ActionMenu from "@/components/ActionMenu.astro";
-import DashboardTableActionsHeader from "@/components/dashboard/DashboardTableActionsHeader.astro";
-import DashboardTableEmptyState from "@/components/dashboard/DashboardTableEmptyState.astro";
+import AdminSettingsAgentsTable from "@/components/admin/settings/AdminSettingsAgentsTable.astro";
 import Button from "@/components/ui/Button.astro";
 import Sheet from "@/components/ui/Sheet.astro";
-import type { AdminAgent } from "@/lib/admin-dashboard/data";
+import type { AdminAgentManagementData } from "@/lib/admin-dashboard/data";
 
 type Props = {
-  agents: AdminAgent[];
+  agentsData: AdminAgentManagementData;
+  agentsPaginationQuery: string;
 };
 
-const { agents } = Astro.props;
+const { agentsData, agentsPaginationQuery } = Astro.props;
 ---
 
 <section class="admin-settings-card" data-admin-settings-accounts>
@@ -76,86 +75,10 @@ const { agents } = Astro.props;
       <p>Deactivate accounts to block sign-in, or send a password reset email to the agent.</p>
     </div>
     <div class="admin-settings-section-row__content">
-      <div class="table-wrap admin-settings-agents-table-wrap">
-        <table class="dashboard-table admin-settings-agents-table">
-          <thead>
-            <tr>
-              <th scope="col">Name</th>
-              <th scope="col">Email</th>
-              <th scope="col">Employee ID</th>
-              <th scope="col">Contact</th>
-              <DashboardTableActionsHeader />
-            </tr>
-          </thead>
-          <tbody>
-            {
-              agents.length === 0 ? (
-                <DashboardTableEmptyState colspan={5} message="No agent accounts found." />
-              ) : (
-                agents.map((agent) => {
-                  const isActive = agent.status === "active";
-
-                  return (
-                    <tr data-agent-id={agent.id} data-agent-status={isActive ? "active" : "inactive"}>
-                      <td class="dashboard-table__cell--truncate">{agent.display_name}</td>
-                      <td class="dashboard-table__cell--truncate">{agent.email ?? "No email"}</td>
-                      <td class="dashboard-table__cell--truncate">{agent.employee_id ?? "—"}</td>
-                      <td class="dashboard-table__cell--truncate">{agent.contact ?? "—"}</td>
-                      <td class="dashboard-table__actions-column">
-                        <span class="sr-only" data-settings-agent-status>
-                          {isActive ? "Active" : "Inactive"}
-                        </span>
-                        <ActionMenu
-                          menuLabel={`Actions for ${agent.display_name}`}
-                          items={[
-                            {
-                              label: isActive ? "Deactivate" : "Activate",
-                              dataAction: "toggle-agent-status",
-                            },
-                            {
-                              label: "Reset password",
-                              dataAction: "reset-agent-password",
-                              disabled: !agent.email,
-                            },
-                          ]}
-                        />
-                      </td>
-                    </tr>
-                  );
-                })
-              )
-            }
-          </tbody>
-        </table>
-      </div>
+      <AdminSettingsAgentsTable data={agentsData} paginationQuery={agentsPaginationQuery} />
     </div>
   </div>
 </section>
-
-<script>
-  import { initAdminSettingsAgents } from "@/lib/client/admin-settings-agents";
-
-  function init() {
-    const section = document.querySelector<HTMLElement>("[data-admin-settings-agents]");
-    if (!section) {
-      return;
-    }
-
-    section.querySelectorAll<HTMLElement>("[data-action-menu-item][data-action='toggle-agent-status']").forEach((item) => {
-      const row = item.closest<HTMLTableRowElement>("tr[data-agent-id]");
-      const nextStatus = row?.dataset.agentStatus === "active" ? "inactive" : "active";
-      item.dataset.nextStatus = nextStatus;
-    });
-
-    initAdminSettingsAgents(section);
-  }
-
-  document.addEventListener("DOMContentLoaded", init);
-  document.addEventListener("astro:after-swap", init);
-  if (document.readyState === "complete" || document.readyState === "interactive") {
-    init();
-  }
-</script>
 
 <style>
   .admin-settings-card {
@@ -191,28 +114,4 @@ const { agents } = Astro.props;
     color: rgba(75, 85, 99, 0.9);
   }
 
-  .admin-settings-agents-table-wrap {
-    width: 100%;
-    max-width: 56rem;
-    min-width: 0;
-  }
-
-  .admin-settings-agents-table {
-    width: 100%;
-    min-width: 0;
-    table-layout: fixed;
-  }
-
-  .admin-settings-agents-table :global(th),
-  .admin-settings-agents-table :global(td) {
-    width: auto;
-    min-width: 0;
-    max-width: none;
-  }
-
-  .admin-settings-agents-table :global(.dashboard-table__actions-column) {
-    width: auto;
-    min-width: 2rem;
-    max-width: none;
-  }
 </style>

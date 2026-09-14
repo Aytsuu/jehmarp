@@ -40,19 +40,12 @@ Total Amount Due        __________________
 ## Footer
 
 **1**
-Delivery Preference
 Mode of Payment (/) 
 ( ) Cash   ( ) Check
 
 <space y>
 
 **2**
-Payment Terms (For Order Confirmation)
-( ) Cash on Delivery (COD)  ( ) Bank Transfer   ( ) Gcash
-
-<space y>
-
-**3**
 **Right side**
 Issued by:
 ________Narcisan S. Galamiton________

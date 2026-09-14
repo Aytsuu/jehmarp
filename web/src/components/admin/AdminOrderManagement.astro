@@ -1,7 +1,8 @@
 ---
 import Accordion from "@/components/ui/Accordion.astro";
-import ActionMenu from "@/components/ActionMenu.astro";
+import ActionMenu, { type ActionMenuItem } from "@/components/ActionMenu.astro";
 import Button from "@/components/ui/Button.astro";
+import Modal from "@/components/ui/Modal.astro";
 import Sheet from "@/components/ui/Sheet.astro";
 import Picker from "@/components/ui/Picker.astro";
 import Tooltip from "@/components/ui/Tooltip.astro";
@@ -43,6 +44,18 @@ const orderStatuses = getAdminOrderStatusFilters();
 const skeletonRows = Array.from({ length: 6 });
 const orderRows = data.orderRows;
 const orderActionPath = filterQuery ? `/admin/orders?${filterQuery}` : "/admin/orders";
+const orderDocumentMenuItems: ActionMenuItem[] = [
+  {
+    label: "Sales Invoice",
+    icon: "external-pdf",
+    dataAction: "bulk-sales-invoice-pdf",
+  },
+  {
+    label: "Order Slip",
+    icon: "external-pdf",
+    dataAction: "bulk-order-slip-pdf",
+  },
+];
 
 function isPendingCustomerOrderRow(order: (typeof orderRows)[number]) {
   return order.row_type === "customer" && order.status === "pending";
@@ -55,7 +68,12 @@ function linkedCustomerOrdersLabel(count: number) {
 }
 ---
 
-<section id="admin-orders" class="admin-panel" aria-labelledby="admin-orders-title">
+<section
+  id="admin-orders"
+  class="admin-panel"
+  data-admin-orders-page
+  aria-labelledby="admin-orders-title"
+>
   <Sheet id="create-order-sheet" width="42rem">
     <div slot="header" class="order-create-sheet__header-copy">
       <h3 class="drawer-sheet__title" data-sheet-title>Create Order</h3>
@@ -438,46 +456,140 @@ function linkedCustomerOrdersLabel(count: number) {
         data-current-filter-query={filterQuery}
         aria-label="Filter orders"
       >
-        <div class="order-filter-form__field order-filter-form__field--search">
-          <input
-            name="search"
-            type="search"
-            value={activeFilters.search ?? ""}
-            placeholder="Search customer, phone, email, or customers in agent orders..."
-            autocomplete="off"
-            aria-label="Search orders"
-            data-order-search-input
-          />
+        <div class="product-filter-form__search-row">
+          <div class="order-filter-form__field order-filter-form__field--search">
+            <input
+              name="search"
+              type="search"
+              value={activeFilters.search ?? ""}
+              placeholder="Search customer, phone, email, or customers in agent orders..."
+              autocomplete="off"
+              aria-label="Search orders"
+              data-order-search-input
+            />
+          </div>
+          <div class="product-filter-form__toolbar-actions">
+            <button
+              type="button"
+              class="product-filter-form__icon-trigger"
+              data-order-filter-modal-trigger
+              data-open-dashboard-modal="order-filters-modal"
+              aria-label="Open order filters"
+              aria-pressed="false"
+              aria-controls="order-filters-modal"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="product-filter-form__icon-trigger order-management-toolbar__document-modal-trigger"
+              data-order-document-modal-trigger
+              data-open-dashboard-modal="order-documents-modal"
+              aria-label="Document options for selected orders"
+              aria-controls="order-documents-modal"
+              disabled
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="product-filter-form__icon-trigger product-filter-form__create-trigger"
+              data-open-create-sheet
+              data-sheet-target="#create-order-sheet"
+              aria-label="Create order"
+              disabled={!canCreateOrder}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+          </div>
         </div>
-        <div class="order-filter-form__field">
-          <select name="source" aria-label="Filter by source">
-            <option value="">All sources</option>
-            {orderSources.map((source) => (
-              <option value={source} selected={activeFilters.source === source}>
-                {formatOrderSource(source)}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div class="order-filter-form__field">
-          <select name="orderStatus" aria-label="Filter by order status">
-            <option value="">All order statuses</option>
-            {orderStatuses.map((status) => (
-              <option value={status} selected={activeFilters.orderStatus === status}>
-                {autoCapitalize(status)}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div class="order-filter-form__field">
-          <select name="paymentStatus" aria-label="Filter by payment status">
-            <option value="">All payment statuses</option>
-            {paymentStatuses.map((status) => (
-              <option value={status} selected={activeFilters.paymentStatus === status}>
-                {autoCapitalize(status)}
-              </option>
-            ))}
-          </select>
+        <div class="product-filter-form__advanced-filters">
+          <div class="order-filter-form__field">
+            <select
+              name="source"
+              data-order-filter-field="source"
+              aria-label="Filter by source"
+            >
+              <option value="">All sources</option>
+              {orderSources.map((source) => (
+                <option value={source} selected={activeFilters.source === source}>
+                  {formatOrderSource(source)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div class="order-filter-form__field">
+            <select
+              name="orderStatus"
+              data-order-filter-field="orderStatus"
+              aria-label="Filter by order status"
+            >
+              <option value="">All order statuses</option>
+              {orderStatuses.map((status) => (
+                <option value={status} selected={activeFilters.orderStatus === status}>
+                  {autoCapitalize(status)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div class="order-filter-form__field">
+            <select
+              name="paymentStatus"
+              data-order-filter-field="paymentStatus"
+              aria-label="Filter by payment status"
+            >
+              <option value="">All payment statuses</option>
+              {paymentStatuses.map((status) => (
+                <option value={status} selected={activeFilters.paymentStatus === status}>
+                  {autoCapitalize(status)}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </form>
       <div class="order-management-toolbar__actions">
@@ -487,18 +599,7 @@ function linkedCustomerOrdersLabel(count: number) {
           triggerLabel="Document"
           triggerClass="order-management-toolbar__document-menu"
           disabled
-          items={[
-            {
-              label: "Sales Invoice",
-              icon: "external-pdf",
-              dataAction: "bulk-sales-invoice-pdf",
-            },
-            {
-              label: "Order Slip",
-              icon: "external-pdf",
-              dataAction: "bulk-order-slip-pdf",
-            },
-          ]}
+          items={orderDocumentMenuItems}
         />
         <Button
           type="button"
@@ -692,12 +793,95 @@ function linkedCustomerOrdersLabel(count: number) {
       </table>
     </DashboardTableBoard>
   </template>
+
+  <Modal
+    id="order-documents-modal"
+    title="Document"
+    description="Choose a document type for the selected orders."
+  >
+    <div class="order-documents-modal">
+      {orderDocumentMenuItems.map((item) => (
+        <button
+          type="button"
+          class="order-documents-modal__action"
+          data-action-menu-item
+          data-action={item.dataAction}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 3h6v6"></path>
+            <path d="M10 14 21 3"></path>
+            <path d="M21 14v4a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3h4"></path>
+          </svg>
+          <span>{item.label}</span>
+        </button>
+      ))}
+    </div>
+  </Modal>
+
+  <Modal
+    id="order-filters-modal"
+    title="Filter orders"
+    description="Narrow orders by source, status, and payment."
+  >
+    <div class="product-filter-modal">
+      <label class="product-filter-modal__field">
+        <span class="product-filter-modal__label">Source</span>
+        <select data-order-filter-field="source" aria-label="Filter by source">
+          <option value="">All sources</option>
+          {orderSources.map((source) => (
+            <option value={source} selected={activeFilters.source === source}>
+              {formatOrderSource(source)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label class="product-filter-modal__field">
+        <span class="product-filter-modal__label">Order status</span>
+        <select data-order-filter-field="orderStatus" aria-label="Filter by order status">
+          <option value="">All order statuses</option>
+          {orderStatuses.map((status) => (
+            <option value={status} selected={activeFilters.orderStatus === status}>
+              {autoCapitalize(status)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label class="product-filter-modal__field">
+        <span class="product-filter-modal__label">Payment status</span>
+        <select data-order-filter-field="paymentStatus" aria-label="Filter by payment status">
+          <option value="">All payment statuses</option>
+          {paymentStatuses.map((status) => (
+            <option value={status} selected={activeFilters.paymentStatus === status}>
+              {autoCapitalize(status)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div class="product-filter-modal__actions">
+        <button
+          type="button"
+          class="product-filter-modal__clear"
+          data-order-filter-modal-clear
+        >
+          Clear
+        </button>
+        <button
+          type="button"
+          class="product-filter-modal__apply"
+          data-order-filter-modal-apply
+        >
+          Apply filters
+        </button>
+      </div>
+    </div>
+  </Modal>
 </section>
 
 <script>
   import { initAdminCreateOrderSheet } from "@/lib/client/admin-create-order-sheet";
   import { initAdminOrderBulkPdf } from "@/lib/client/admin-order-bulk-pdf";
   import { initAdminOrdersFragmentTable } from "@/lib/client/admin-orders-fragment-table";
+  import { initDashboardFilterModals } from "@/lib/client/dashboard-filter-modal";
 
   function bootCreateOrderSheet() {
     initAdminCreateOrderSheet();
@@ -711,6 +895,7 @@ function linkedCustomerOrdersLabel(count: number) {
   }
 
   function initAdminOrderFilters() {
+    initDashboardFilterModals();
     initAdminOrdersFragmentTable();
   }
 

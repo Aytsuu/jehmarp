@@ -27,7 +27,11 @@ const brandText = platformSettings.businessProfile.tradeName || "JEHMARP";
 const logoUrl = resolvePublicStorageUrl(platformSettings.businessProfile.logoPath);
 ---
 
-<div class="dashboard-sidebar-shell" transition:persist="dashboard-sidebar-shell">
+<div
+  class="dashboard-sidebar-shell"
+  id="dashboard-sidebar-mobile-panel"
+  transition:persist="dashboard-sidebar-shell"
+>
   <aside class="dashboard-sidebar" aria-labelledby="dashboard-sidebar-title">
     <div class="dashboard-sidebar__header">
       <a class="dashboard-sidebar__brand" href="/">
@@ -38,6 +42,32 @@ const logoUrl = resolvePublicStorageUrl(platformSettings.businessProfile.logoPat
         )}
         <span class="dashboard-sidebar__brand-text">{brandText}</span>
       </a>
+      {
+        isAdmin && (
+          <button
+            type="button"
+            class="dashboard-sidebar__mobile-close"
+            data-admin-sidebar-mobile-close
+            aria-label="Close menu"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.25"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        )
+      }
     </div>
     <div class="dashboard-sidebar__scroll">
       <nav class="dashboard-sidebar__nav" aria-label={navLabel}>

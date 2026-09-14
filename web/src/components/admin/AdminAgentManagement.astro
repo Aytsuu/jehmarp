@@ -6,6 +6,7 @@ import DashboardTableNumberHeader from "@/components/dashboard/DashboardTableNum
 import DashboardTablePagination from "@/components/dashboard/DashboardTablePagination.astro";
 import Popover from "@/components/ui/Popover.astro";
 import Button from "@/components/ui/Button.astro";
+import Modal from "@/components/ui/Modal.astro";
 import Sheet from "@/components/ui/Sheet.astro";
 import ViewButton from "@/components/ViewButton.astro";
 import type { AdminAgentManagementData } from "@/lib/admin-dashboard/data";
@@ -25,7 +26,12 @@ const { data, activeFilters, filterQuery } = Astro.props;
 const skeletonRows = Array.from({ length: 6 });
 ---
 
-<section id="admin-agents" class="admin-panel" aria-labelledby="admin-agents-title">
+<section
+  id="admin-agents"
+  class="admin-panel"
+  data-admin-agents-page
+  aria-labelledby="admin-agents-title"
+>
   <Sheet id="create-agent-sheet" width="42rem">
     <div slot="header" class="agent-create-sheet__header-copy">
       <h3 class="drawer-sheet__title" data-sheet-title>Create Agent</h3>
@@ -107,26 +113,83 @@ const skeletonRows = Array.from({ length: 6 });
         data-current-filter-query={filterQuery}
         aria-label="Filter agents"
       >
-        <div class="order-filter-form__field order-filter-form__field--search">
-          <input
-            name="search"
-            type="search"
-            value={activeFilters.search ?? ""}
-            placeholder="Search agent code, name, email, or contact..."
-            autocomplete="off"
-            aria-label="Search agents"
-            data-agent-search-input
-          />
+        <div class="product-filter-form__search-row">
+          <div class="order-filter-form__field order-filter-form__field--search">
+            <input
+              name="search"
+              type="search"
+              value={activeFilters.search ?? ""}
+              placeholder="Search agent code, name, email, or contact..."
+              autocomplete="off"
+              aria-label="Search agents"
+              data-agent-search-input
+            />
+          </div>
+          <div class="product-filter-form__toolbar-actions">
+            <button
+              type="button"
+              class="product-filter-form__icon-trigger"
+              data-agent-filter-modal-trigger
+              data-open-dashboard-modal="agent-filters-modal"
+              aria-label="Open agent filters"
+              aria-pressed="false"
+              aria-controls="agent-filters-modal"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="product-filter-form__icon-trigger product-filter-form__create-trigger"
+              data-open-create-sheet
+              data-sheet-target="#create-agent-sheet"
+              aria-label="Create agent"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+          </div>
         </div>
-        <div class="order-filter-form__field">
-          <select name="status" aria-label="Filter by status">
-            <option value="">All statuses</option>
-            {agentStatuses.map((status) => (
-              <option value={status} selected={activeFilters.status === status}>
-                {autoCapitalize(status)}
-              </option>
-            ))}
-          </select>
+        <div class="product-filter-form__advanced-filters">
+          <div class="order-filter-form__field">
+            <select
+              name="status"
+              data-agent-filter-field="status"
+              aria-label="Filter by status"
+            >
+              <option value="">All statuses</option>
+              {agentStatuses.map((status) => (
+                <option value={status} selected={activeFilters.status === status}>
+                  {autoCapitalize(status)}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </form>
 
@@ -282,12 +345,42 @@ const skeletonRows = Array.from({ length: 6 });
       </table>
     </DashboardTableBoard>
   </template>
+
+  <Modal
+    id="agent-filters-modal"
+    title="Filter agents"
+    description="Narrow agents by status."
+  >
+    <div class="product-filter-modal">
+      <label class="product-filter-modal__field">
+        <span class="product-filter-modal__label">Status</span>
+        <select data-agent-filter-field="status" aria-label="Filter by status">
+          <option value="">All statuses</option>
+          {agentStatuses.map((status) => (
+            <option value={status} selected={activeFilters.status === status}>
+              {autoCapitalize(status)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div class="product-filter-modal__actions">
+        <button type="button" class="product-filter-modal__clear" data-agent-filter-modal-clear>
+          Clear
+        </button>
+        <button type="button" class="product-filter-modal__apply" data-agent-filter-modal-apply>
+          Apply filters
+        </button>
+      </div>
+    </div>
+  </Modal>
 </section>
 
 <script>
+  import { initDashboardFilterModals } from "@/lib/client/dashboard-filter-modal";
   import { initDashboardFragmentTable } from "@/lib/client/dashboard-fragment-table";
 
   function initAdminAgentFilters() {
+    initDashboardFilterModals();
     initDashboardFragmentTable({
       cacheKey: "admin-agents-filter-cache-v2",
       fragmentPath: "/admin/agents-fragment",

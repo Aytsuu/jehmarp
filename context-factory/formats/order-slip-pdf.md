@@ -40,20 +40,20 @@ Total        __________________
 ## Footer
 
 **1**
-Delivery Preference
+**Delivery Preference**
 Mode of Delivery: ( ) Pick-Up   ( ) Delivery
 Preferred Delivery Date and Time: ___________________
 
 <space y>
 
 **2**
-Payment Terms (For Order Confirmation)
+**Payment Terms (For Order Confirmation)**
 ( ) Cash on Delivery (COD)  ( ) Bank Transfer   ( ) Gcash
 
 <space y>
 
 **3**
-Payment Due: ( ) Upon Delivery  ( ) Within___days
+**Payment Due**: ( ) Upon Delivery  ( ) Within___days
 
 <space y>
 

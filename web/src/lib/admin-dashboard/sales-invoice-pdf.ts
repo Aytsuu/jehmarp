@@ -1,17 +1,24 @@
 import type { DocumentLayoutOptions } from "@/lib/order-documents/layout";
 import { buildSalesInvoiceLayout } from "@/lib/order-documents/layout";
 import type { DocumentOrder, DocumentOrderItem } from "@/lib/order-documents/view";
-import { buildPdfDocument, pdfPageWidth } from "@/lib/order-documents/pdf-document";
-import { buildLogoImageDrawCommand } from "@/lib/order-documents/pdf-logo";
+import { buildPdfDocument, documentTableTopY } from "@/lib/order-documents/pdf-document";
+import { drawPdfLabeledField } from "@/lib/order-documents/pdf-fields";
+import { drawDocumentPageHeader } from "@/lib/order-documents/pdf-header";
+import {
+  addPdfText,
+  DOCUMENT_BODY_FONT_SIZE,
+  formatNumber,
+  getAlignedX,
+  sanitizePdfText,
+  type PdfTextOptions,
+} from "@/lib/order-documents/pdf-text";
 
-const pageWidth = pdfPageWidth;
 const marginX = 40;
+const rightMargin = 555;
+const secondColumnX = 310;
 const tableRowsPerPage = 10;
 
-type TextOptions = {
-  size?: number;
-  align?: "left" | "center" | "right";
-};
+type TextOptions = PdfTextOptions;
 
 type SalesInvoicePage = {
   items: DocumentOrderItem[];
@@ -70,45 +77,24 @@ function drawHeader(
   layout: ReturnType<typeof buildSalesInvoiceLayout>,
   options: DocumentLayoutOptions = {},
 ) {
-  addText(commands, pageWidth / 2, 802, layout.brandLines[0], { align: "center", size: 13 });
-  addText(commands, pageWidth / 2, 786, layout.brandLines[1], { align: "center", size: 10 });
-  addText(commands, pageWidth / 2, 771, layout.brandLines[2], { align: "center", size: 10 });
-  addText(commands, pageWidth / 2, 750, page.pageCount > 1 ? `SALES INVOICE - Page ${page.pageNumber}` : "SALES INVOICE", {
-    align: "center",
-    size: 14,
-  });
-  drawDocumentLogo(commands, options.logoImage);
-}
-
-function drawDocumentLogo(
-  commands: string[],
-  logoImage: DocumentLayoutOptions["logoImage"],
-) {
-  if (logoImage) {
-    commands.push(
-      buildLogoImageDrawCommand(logoImage.name, logoImage.width, logoImage.height, {
-        centerX: 525,
-        centerY: 780,
-        maxSize: 60,
-      }),
-    );
-    return;
-  }
-
-  drawCircle(commands, 525, 780, 30);
-  addText(commands, 525, 778, "LOGO", { align: "center", size: 9 });
+  drawDocumentPageHeader(
+    commands,
+    layout.brandLines,
+    page.pageCount > 1 ? `SALES INVOICE - Page ${page.pageNumber}` : "SALES INVOICE",
+    { logoImage: options.logoImage },
+  );
 }
 
 function drawInvoiceFields(commands: string[], layout: ReturnType<typeof buildSalesInvoiceLayout>) {
-
-  addText(commands, 40, 717, layout.dateLabel, { size: 10 });
-  drawLine(commands, 73, 713, 190, 713);
-  addText(commands, 310, 717, layout.invoiceNumberLabel, { size: 10 });
-  drawLine(commands, 365, 713, 555, 713);
-  addText(commands, 40, 695, layout.soldToLabel, { size: 10 });
-  drawLine(commands, 80, 691, 260, 691);
-  addText(commands, 310, 695, layout.addressLabel, { size: 10 });
-  drawLine(commands, 355, 691, 555, 691);
+  drawPdfLabeledField(commands, marginX, 717, layout.dateField);
+  drawPdfLabeledField(commands, marginX, 695, layout.soldToField, {
+    maxUnderlineEndX: 280,
+    minUnderlineWidth: 80,
+  });
+  drawPdfLabeledField(commands, secondColumnX, 695, layout.addressField, {
+    maxUnderlineEndX: rightMargin,
+    minUnderlineWidth: 80,
+  });
 }
 
 function drawItemsTable(commands: string[], items: DocumentOrderItem[], options: DocumentLayoutOptions = {}) {
@@ -116,7 +102,7 @@ function drawItemsTable(commands: string[], items: DocumentOrderItem[], options:
     id: "", created_at: "", customer: null, agent: null, customer_order_item: items, invoice: [],
   }, options);
   const tableColumnWidths = layout.columns.map((column) => column.width);
-  const tableTopY = 665;
+  const tableTopY = documentTableTopY;
   const rowHeight = 24;
   const tableWidth = tableColumnWidths.reduce((total, width) => total + width, 0);
   const tableLeftX = marginX;
@@ -137,18 +123,18 @@ function drawItemsTable(commands: string[], items: DocumentOrderItem[], options:
   });
 
   const headerY = tableTopY - 16;
-  addText(commands, tableLeftX + 6, headerY, layout.columns[0].label, { size: 9 });
-  addText(commands, tableLeftX + 241, headerY, layout.columns[1].label, { size: 9 });
-  addText(commands, tableLeftX + 321, headerY, layout.columns[2].label, { size: 9 });
-  addText(commands, tableLeftX + 421, headerY, layout.columns[3].label, { size: 9 });
+  addText(commands, tableLeftX + 6, headerY, layout.columns[0].label);
+  addText(commands, tableLeftX + 241, headerY, layout.columns[1].label);
+  addText(commands, tableLeftX + 321, headerY, layout.columns[2].label);
+  addText(commands, tableLeftX + 421, headerY, layout.columns[3].label);
 
   layout.rows.forEach((row, index) => {
     const rowY = tableTopY - rowHeight * (index + 1) - 16;
 
-    addText(commands, tableLeftX + 6, rowY, truncate(row.cells[0], 38), { size: 8 });
-    addText(commands, tableLeftX + 241, rowY, row.cells[1], { size: 8 });
-    addText(commands, tableLeftX + 321, rowY, row.cells[2], { size: 8 });
-    addText(commands, tableLeftX + 421, rowY, row.cells[3], { size: 8 });
+    addText(commands, tableLeftX + 6, rowY, truncate(row.cells[0], 38));
+    addText(commands, tableLeftX + 241, rowY, row.cells[1]);
+    addText(commands, tableLeftX + 321, rowY, row.cells[2]);
+    addText(commands, tableLeftX + 421, rowY, row.cells[3]);
   });
 
   return tableBottomY;
@@ -156,31 +142,27 @@ function drawItemsTable(commands: string[], items: DocumentOrderItem[], options:
 
 function drawInvoiceTotal(commands: string[], layout: ReturnType<typeof buildSalesInvoiceLayout>, tableBottomY: number) {
   const totalY = tableBottomY - 24;
-  addText(commands, 330, totalY, layout.totalLabel, { size: 11 });
-  drawLine(commands, 430, totalY - 4, 555, totalY - 4);
+  drawPdfLabeledField(commands, 330, totalY, layout.totalField, {
+    labelGap: 32,
+    underline: false,
+  });
 }
 
 function drawPaymentAndIssuer(commands: string[], layout: ReturnType<typeof buildSalesInvoiceLayout>) {
-  addText(commands, 40, 348, "Delivery Preference", { size: 10 });
-  addText(commands, 40, 330, layout.paymentLines[0] ?? "", { size: 9 });
-  addTextWithVectorCheckmarks(commands, 40, 312, layout.paymentLines[1] ?? "", { size: 9 });
-  addText(commands, 40, 277, layout.paymentHeading, { size: 10 });
-  addTextWithVectorCheckmarks(commands, 40, 259, layout.paymentLines[2] ?? "", { size: 9 });
-  layout.paymentLines.slice(3).forEach((line, index) => {
-    addText(commands, 40, 241 - index * 18, line, { size: 9 });
-  });
-  addText(commands, 405, 184, layout.issuerHeading, { size: 10 });
-  addText(commands, 340, 156, layout.issuerName, { size: 10 });
-  drawLine(commands, 330, 152, 555, 152);
-  addText(commands, 360, 136, layout.issuerSubline, { size: 9 });
+  const issuerBlockLeftX = 330;
+  const issuerBlockRightX = rightMargin;
+  const issuerBlockCenterX = (issuerBlockLeftX + issuerBlockRightX) / 2;
+
+  addText(commands, 40, 348, layout.modeOfPaymentHeading);
+  addTextWithVectorCheckmarks(commands, 40, 330, layout.modeOfPaymentLine);
+  addText(commands, issuerBlockLeftX, 184, layout.issuerHeading, { bold: true });
+  addText(commands, issuerBlockCenterX, 156, layout.issuerName, { align: "center" });
+  drawLine(commands, issuerBlockLeftX, 152, issuerBlockRightX, 152);
+  addText(commands, issuerBlockCenterX, 136, layout.issuerSubline, { align: "center" });
 }
 
-function addText(commands: string[], x: number, y: number, value: string, options: TextOptions = {}) {
-  const size = options.size ?? 10;
-  const text = sanitizePdfText(value);
-  const adjustedX = getAlignedX(x, text, size, options.align ?? "left");
-
-  commands.push(`BT /F1 ${size} Tf 1 0 0 1 ${formatNumber(adjustedX)} ${formatNumber(y)} Tm (${escapePdfText(text)}) Tj ET`);
+function addText(commands: string[], x: number, y: number, value: string | null | undefined, options: TextOptions = {}) {
+  addPdfText(commands, x, y, value, options);
 }
 
 function addTextWithVectorCheckmarks(
@@ -190,7 +172,7 @@ function addTextWithVectorCheckmarks(
   value: string,
   options: TextOptions = {},
 ) {
-  const size = options.size ?? 10;
+  const size = options.size ?? DOCUMENT_BODY_FONT_SIZE;
   const displayText = value.replaceAll("✓", " ");
   const sanitizedText = sanitizePdfText(displayText);
   const adjustedX = getAlignedX(x, sanitizedText, size, options.align ?? "left");
@@ -216,14 +198,6 @@ function drawCheckmark(commands: string[], x: number, y: number, size: number) {
   );
 }
 
-function getAlignedX(x: number, value: string, size: number, align: "left" | "center" | "right") {
-  if (align === "left") return x;
-
-  const estimatedWidth = value.length * size * 0.52;
-
-  return align === "center" ? x - estimatedWidth / 2 : x - estimatedWidth;
-}
-
 function drawLine(commands: string[], x1: number, y1: number, x2: number, y2: number) {
   commands.push(`${formatNumber(x1)} ${formatNumber(y1)} m ${formatNumber(x2)} ${formatNumber(y2)} l S`);
 }
@@ -232,36 +206,6 @@ function drawRect(commands: string[], x: number, y: number, width: number, heigh
   commands.push(`${formatNumber(x)} ${formatNumber(y)} ${formatNumber(width)} ${formatNumber(height)} re S`);
 }
 
-function drawCircle(commands: string[], centerX: number, centerY: number, radius: number) {
-  const c = radius * 0.5522847498;
-  const x = centerX;
-  const y = centerY;
-
-  commands.push([
-    `${formatNumber(x + radius)} ${formatNumber(y)} m`,
-    `${formatNumber(x + radius)} ${formatNumber(y + c)} ${formatNumber(x + c)} ${formatNumber(y + radius)} ${formatNumber(x)} ${formatNumber(y + radius)} c`,
-    `${formatNumber(x - c)} ${formatNumber(y + radius)} ${formatNumber(x - radius)} ${formatNumber(y + c)} ${formatNumber(x - radius)} ${formatNumber(y)} c`,
-    `${formatNumber(x - radius)} ${formatNumber(y - c)} ${formatNumber(x - c)} ${formatNumber(y - radius)} ${formatNumber(x)} ${formatNumber(y - radius)} c`,
-    `${formatNumber(x + c)} ${formatNumber(y - radius)} ${formatNumber(x + radius)} ${formatNumber(y - c)} ${formatNumber(x + radius)} ${formatNumber(y)} c`,
-    "S",
-  ].join(" "));
-}
-
 function truncate(value: string, maxLength: number) {
   return value.length <= maxLength ? value : `${value.slice(0, maxLength - 3)}...`;
-}
-
-function sanitizePdfText(value: string) {
-  return value.replace(/[^\x20-\x7E]/g, "?");
-}
-
-function escapePdfText(value: string) {
-  return value
-    .replaceAll("\\", "\\\\")
-    .replaceAll("(", "\\(")
-    .replaceAll(")", "\\)");
-}
-
-function formatNumber(value: number) {
-  return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }

@@ -3,6 +3,42 @@ import { describe, expect, it } from "vitest";
 import type { DocumentOrder } from "./view";
 import { buildOrderSlipLayout, buildSalesInvoiceLayout } from "./layout";
 
+describe("buildOrderSlipLayout", () => {
+  const order = {
+    id: "49d07a2e-a8bb-4dc9-8df5-8ee5464286fb",
+    created_at: "2026-07-18T00:00:00.000Z",
+    customer: {
+      first_name: "Maria",
+      last_name: "Santos",
+      address: "Cebu",
+    },
+    customer_order_item: [],
+    invoice: [],
+  } satisfies DocumentOrder;
+
+  it("includes fixed delivery and payment lines that are not template-editable", () => {
+    const layout = buildOrderSlipLayout(order);
+
+    expect(layout.deliveryHeading).toBe("Delivery Preference");
+    expect(layout.deliveryLines).toEqual([
+      "Mode of Delivery: ( ) Pick-Up   ( ) Delivery",
+      "Preferred Delivery Date and Time: ___________________",
+    ]);
+    expect(layout.paymentLines).toEqual([
+      "( ) Cash on Delivery (COD)  ( ) Bank Transfer   ( ) Gcash",
+    ]);
+    expect(layout.paymentDueHeading).toBe("Payment Due:");
+    expect(layout.paymentDueLine).toBe("( ) Upon Delivery  ( ) Within___days");
+    expect(layout.confirmationText).toContain("I hereby confirm the above order");
+    expect(layout.dateField).toEqual({ label: "Date", value: "2026-07-18" });
+    expect(layout.totalField).toEqual({
+      label: "Total",
+      value: "0.00",
+      labelSuffix: " ",
+    });
+  });
+});
+
 describe("buildSalesInvoiceLayout", () => {
   it("checks the selected payment method and terms from the saved payment record", () => {
     const layout = buildSalesInvoiceLayout({
@@ -39,11 +75,8 @@ describe("buildSalesInvoiceLayout", () => {
       ],
     } satisfies DocumentOrder);
 
-    expect(layout.paymentLines).toEqual([
-      "Mode of Payment (/)",
-      "( ) Cash   (✓) Check",
-      "( ) Cash on Delivery (COD)  (✓) Bank Transfer   ( ) Gcash",
-    ]);
+    expect(layout.modeOfPaymentHeading).toBe("Mode of Payment (/)");
+    expect(layout.modeOfPaymentLine).toBe("( ) Cash   (✓) Check");
   });
 });
 

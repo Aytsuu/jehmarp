@@ -4,6 +4,7 @@ export * from "./normalize";
 export * from "./storage";
 export * from "./branding";
 export * from "./document-payment";
+export * from "./document-templates";
 export * from "./notifications";
 export * from "./document-layout";
 export * from "./operational-notification-email";
