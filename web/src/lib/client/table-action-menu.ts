@@ -1,7 +1,6 @@
 import { openAlertDialogFromTrigger } from "./dashboard-alert-dialog";
 
 let activeMenu: HTMLElement | null = null;
-let activeMenuOpenedAt = 0;
 
 const initializedDocuments = new WeakSet<Document>();
 
@@ -204,7 +203,6 @@ function closeMenu(menu: HTMLElement | null) {
 
   if (activeMenu === menu) {
     activeMenu = null;
-    activeMenuOpenedAt = 0;
   }
 }
 
@@ -269,7 +267,6 @@ function openMenu(menu: HTMLElement) {
   trigger?.setAttribute("aria-expanded", "true");
   positionMenu(menu);
   activeMenu = menu;
-  activeMenuOpenedAt = Date.now();
 }
 
 function toggleMenu(menu: HTMLElement) {
@@ -372,7 +369,6 @@ export function openTableActionMenuFromAnchor(
   trigger?.setAttribute("aria-expanded", "true");
   positionMenuContent(menu, anchor.getBoundingClientRect());
   activeMenu = menu;
-  activeMenuOpenedAt = Date.now();
 }
 
 export function getPortaledMenuContent(menuId: string) {

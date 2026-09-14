@@ -6,7 +6,6 @@ import {
   getDefaultSidebarTogglePosition,
   getMaxSidebarToggleOffset,
   getNearestSidebarToggleEdge,
-  getSidebarToggleOffsetForPointer,
   getSidebarTogglePositionFromPointer,
   readSidebarTogglePosition,
   writeSidebarTogglePosition,
