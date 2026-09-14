@@ -1,7 +1,19 @@
 import { isAgentMobilePrimaryRoute, isAgentNavActive } from "@/lib/dashboard/agent-navigation";
 
 const AGENT_MOBILE_QUERY = "(max-width: 47.99rem)";
+const INTERACTIVE_TABLE_VIEWPORT_QUERY = "(max-width: 63.99rem)";
 const APP_VIEWPORT_HEIGHT_VAR = "--app-viewport-height";
+
+export function hasInteractiveTableLayout() {
+  return Boolean(document.querySelector("[data-interactive-table]"));
+}
+
+export function shouldUseVisualViewportHeight() {
+  return (
+    hasInteractiveTableLayout() &&
+    window.matchMedia(INTERACTIVE_TABLE_VIEWPORT_QUERY).matches
+  );
+}
 
 export function syncAppViewportHeight(
   viewportHeight = window.visualViewport?.height ?? window.innerHeight,
@@ -65,16 +77,29 @@ function resetAgentMobileScroll() {
   document.querySelector<HTMLElement>(".dashboard-main")?.scrollTo(0, 0);
 }
 
-function initAgentViewportHeightSync() {
-  const dashboardWindow = window as Window & {
-    agentViewportHeightInitialized?: boolean;
-  };
-  if (dashboardWindow.agentViewportHeightInitialized) return;
-  dashboardWindow.agentViewportHeightInitialized = true;
+function clearAppViewportHeightOverride() {
+  document.documentElement.style.removeProperty(APP_VIEWPORT_HEIGHT_VAR);
+}
 
-  const mediaQuery = window.matchMedia(AGENT_MOBILE_QUERY);
+function initAppViewportHeightSync() {
+  const dashboardWindow = window as Window & {
+    appViewportHeightInitialized?: boolean;
+  };
+  if (dashboardWindow.appViewportHeightInitialized) return;
+  dashboardWindow.appViewportHeightInitialized = true;
+
+  const agentMediaQuery = window.matchMedia(AGENT_MOBILE_QUERY);
+  const interactiveTableMediaQuery = window.matchMedia(INTERACTIVE_TABLE_VIEWPORT_QUERY);
   const syncIfNeeded = () => {
-    if (!isAgentRoute() || !mediaQuery.matches) return;
+    const needsSync =
+      (isAgentRoute() && agentMediaQuery.matches) ||
+      shouldUseVisualViewportHeight();
+
+    if (!needsSync) {
+      clearAppViewportHeightOverride();
+      return;
+    }
+
     syncAppViewportHeight();
   };
 
@@ -82,7 +107,8 @@ function initAgentViewportHeightSync() {
   window.visualViewport?.addEventListener("resize", syncIfNeeded);
   window.visualViewport?.addEventListener("scroll", syncIfNeeded);
   window.addEventListener("resize", syncIfNeeded);
-  mediaQuery.addEventListener("change", syncIfNeeded);
+  agentMediaQuery.addEventListener("change", syncIfNeeded);
+  interactiveTableMediaQuery.addEventListener("change", syncIfNeeded);
   document.addEventListener("astro:page-load", syncIfNeeded);
   document.addEventListener("astro:after-swap", syncIfNeeded);
 }
@@ -94,7 +120,7 @@ export function initAgentMobileNavigation() {
   if (dashboardWindow.agentMobileNavigationInitialized) return;
   dashboardWindow.agentMobileNavigationInitialized = true;
 
-  initAgentViewportHeightSync();
+  initAppViewportHeightSync();
 
   document.addEventListener(
     "click",

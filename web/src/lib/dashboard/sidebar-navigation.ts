@@ -12,6 +12,43 @@ export type DashboardSidebarCategory = {
   items: DashboardSidebarItem[];
 };
 
+export function isDashboardSidebarItemActive(pathname: string, href: string) {
+  if (pathname === href) {
+    return true;
+  }
+
+  if (href === "/admin" || href === "/agent") {
+    return false;
+  }
+
+  return pathname.startsWith(href);
+}
+
+export function getActiveDashboardSidebarItem(
+  pathname: string,
+  isAdmin: boolean,
+): DashboardSidebarItem | null {
+  const categories = getDashboardSidebarCategories(isAdmin);
+
+  for (const group of categories) {
+    for (const item of group.items) {
+      if (item.isAction) {
+        continue;
+      }
+
+      if (isDashboardSidebarItemActive(pathname, item.href)) {
+        return item;
+      }
+    }
+  }
+
+  return (
+    categories[0]?.items.find((item) => !item.isAction && item.href === "/admin") ??
+    categories[0]?.items.find((item) => !item.isAction) ??
+    null
+  );
+}
+
 export function getDashboardSidebarCategories(isAdmin: boolean): DashboardSidebarCategory[] {
   return isAdmin
     ? [

@@ -8,6 +8,7 @@ import StatusBadge from "@/components/dashboard/StatusBadge.astro";
 import Popover from "@/components/ui/Popover.astro";
 import Button from "@/components/ui/Button.astro";
 import Picker from "@/components/ui/Picker.astro";
+import Modal from "@/components/ui/Modal.astro";
 import Sheet from "@/components/ui/Sheet.astro";
 import ViewButton from "@/components/ViewButton.astro";
 import type { AdminCustomerManagementData } from "@/lib/admin-dashboard/data";
@@ -35,7 +36,12 @@ function formatRegistrationAgentLabel(agent: (typeof activeAgents)[number]) {
 }
 ---
 
-<section id="admin-customers" class="admin-panel" aria-labelledby="admin-customers-title">
+<section
+  id="admin-customers"
+  class="admin-panel"
+  data-admin-customers-page
+  aria-labelledby="admin-customers-title"
+>
   <Sheet id="create-customer-sheet" width="42rem">
     <div slot="header" class="agent-create-sheet__header-copy">
       <h3 class="drawer-sheet__title" data-sheet-title>Create Customer</h3>
@@ -208,26 +214,106 @@ function formatRegistrationAgentLabel(agent: (typeof activeAgents)[number]) {
         data-current-filter-query={filterQuery}
         aria-label="Filter customers"
       >
-        <div class="order-filter-form__field order-filter-form__field--search">
-          <input
-            name="search"
-            type="search"
-            value={activeFilters.search ?? ""}
-            placeholder="Search name, email, contact, tracking number, or assigned agent..."
-            autocomplete="off"
-            aria-label="Search customers"
-            data-customer-search-input
-          />
+        <div class="product-filter-form__search-row">
+          <div class="order-filter-form__field order-filter-form__field--search">
+            <input
+              name="search"
+              type="search"
+              value={activeFilters.search ?? ""}
+              placeholder="Search name, email, contact, tracking number, or assigned agent..."
+              autocomplete="off"
+              aria-label="Search customers"
+              data-customer-search-input
+            />
+          </div>
+          <div class="product-filter-form__toolbar-actions">
+            <button
+              type="button"
+              class="product-filter-form__icon-trigger"
+              data-customer-filter-modal-trigger
+              data-open-dashboard-modal="customer-filters-modal"
+              aria-label="Open customer filters"
+              aria-pressed="false"
+              aria-controls="customer-filters-modal"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="product-filter-form__icon-trigger"
+              data-open-create-sheet
+              data-sheet-target="#create-customer-registration-link-sheet"
+              aria-label="Create registration link"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="product-filter-form__icon-trigger product-filter-form__create-trigger"
+              data-open-create-sheet
+              data-sheet-target="#create-customer-sheet"
+              aria-label="Create customer"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+          </div>
         </div>
-        <div class="order-filter-form__field">
-          <select name="customerType" aria-label="Filter by customer type">
-            <option value="">All types</option>
-            {customerTypes.map((customerType) => (
-              <option value={customerType} selected={activeFilters.customerType === customerType}>
-                {formatCustomerType(customerType)}
-              </option>
-            ))}
-          </select>
+        <div class="product-filter-form__advanced-filters">
+          <div class="order-filter-form__field">
+            <select
+              name="customerType"
+              data-customer-filter-field="customerType"
+              aria-label="Filter by customer type"
+            >
+              <option value="">All types</option>
+              {customerTypes.map((customerType) => (
+                <option value={customerType} selected={activeFilters.customerType === customerType}>
+                  {formatCustomerType(customerType)}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </form>
 
@@ -497,6 +583,33 @@ function formatRegistrationAgentLabel(agent: (typeof activeAgents)[number]) {
       </table>
     </DashboardTableBoard>
   </template>
+  <Modal
+    id="customer-filters-modal"
+    title="Filter customers"
+    description="Narrow customers by type."
+  >
+    <div class="product-filter-modal">
+      <label class="product-filter-modal__field">
+        <span class="product-filter-modal__label">Customer type</span>
+        <select data-customer-filter-field="customerType" aria-label="Filter by customer type">
+          <option value="">All types</option>
+          {customerTypes.map((customerType) => (
+            <option value={customerType} selected={activeFilters.customerType === customerType}>
+              {formatCustomerType(customerType)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div class="product-filter-modal__actions">
+        <button type="button" class="product-filter-modal__clear" data-customer-filter-modal-clear>
+          Clear
+        </button>
+        <button type="button" class="product-filter-modal__apply" data-customer-filter-modal-apply>
+          Apply filters
+        </button>
+      </div>
+    </div>
+  </Modal>
 </section>
 
 <style>
@@ -510,6 +623,7 @@ function formatRegistrationAgentLabel(agent: (typeof activeAgents)[number]) {
 </style>
 
 <script>
+  import { initDashboardFilterModals } from "@/lib/client/dashboard-filter-modal";
   import { initDashboardFragmentTable } from "@/lib/client/dashboard-fragment-table";
   import { initUiPicker } from "@/lib/client/ui-picker";
 
@@ -551,6 +665,7 @@ function formatRegistrationAgentLabel(agent: (typeof activeAgents)[number]) {
   }
 
   function initAdminCustomerFilters() {
+    initDashboardFilterModals();
     initDashboardFragmentTable({
       cacheKey: "admin-customers-filter-cache-v2",
       fragmentPath: "/admin/customers-fragment",

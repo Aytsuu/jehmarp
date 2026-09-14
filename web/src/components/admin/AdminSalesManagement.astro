@@ -5,6 +5,8 @@ import DashboardTableEmptyState from "@/components/dashboard/DashboardTableEmpty
 import DashboardTableNumberHeader from "@/components/dashboard/DashboardTableNumberHeader.astro";
 import DashboardTablePagination from "@/components/dashboard/DashboardTablePagination.astro";
 import TableActionMenu from "@/components/TableActionMenu.astro";
+import TableRowActionsModal from "@/components/TableRowActionsModal.astro";
+import Modal from "@/components/ui/Modal.astro";
 import type { AdminSalesManagementData } from "@/lib/admin-dashboard/data";
 import type { AdminOrderFilters } from "@/lib/admin-dashboard/order-filters";
 import { orderSources } from "@/lib/admin-dashboard/order-filters";
@@ -22,7 +24,12 @@ const { data, activeFilters, filterQuery } = Astro.props;
 const skeletonRows = Array.from({ length: 6 });
 ---
 
-<section id="admin-sales" class="admin-panel" aria-labelledby="admin-sales-title">
+<section
+  id="admin-sales"
+  class="admin-panel"
+  data-admin-sales-page
+  aria-labelledby="admin-sales-title"
+>
   <div data-interactive-table data-server-pagination="true" class="dashboard-interactive-table">
     <div class="table-filters order-management-toolbar">
       <form
@@ -33,26 +40,60 @@ const skeletonRows = Array.from({ length: 6 });
         data-current-filter-query={filterQuery}
         aria-label="Filter sales"
       >
-        <div class="order-filter-form__field order-filter-form__field--search">
-          <input
-            name="search"
-            type="search"
-            value={activeFilters.search ?? ""}
-            placeholder="Search customer, invoice, phone, or email..."
-            autocomplete="off"
-            aria-label="Search sales"
-            data-sales-search-input
-          />
+        <div class="product-filter-form__search-row">
+          <div class="order-filter-form__field order-filter-form__field--search">
+            <input
+              name="search"
+              type="search"
+              value={activeFilters.search ?? ""}
+              placeholder="Search customer, invoice, phone, or email..."
+              autocomplete="off"
+              aria-label="Search sales"
+              data-sales-search-input
+            />
+          </div>
+          <div class="product-filter-form__toolbar-actions">
+            <button
+              type="button"
+              class="product-filter-form__icon-trigger"
+              data-sales-filter-modal-trigger
+              data-open-dashboard-modal="sales-filters-modal"
+              aria-label="Open sales filters"
+              aria-pressed="false"
+              aria-controls="sales-filters-modal"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+              </svg>
+            </button>
+          </div>
         </div>
-        <div class="order-filter-form__field">
-          <select name="source" aria-label="Filter by source">
-            <option value="">All sources</option>
-            {orderSources.map((source) => (
-              <option value={source} selected={activeFilters.source === source}>
-                {formatOrderSource(source)}
-              </option>
-            ))}
-          </select>
+        <div class="product-filter-form__advanced-filters">
+          <div class="order-filter-form__field">
+            <select
+              name="source"
+              data-sales-filter-field="source"
+              aria-label="Filter by source"
+            >
+              <option value="">All sources</option>
+              {orderSources.map((source) => (
+                <option value={source} selected={activeFilters.source === source}>
+                  {formatOrderSource(source)}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </form>
     </div>
@@ -99,6 +140,7 @@ const skeletonRows = Array.from({ length: 6 });
                       menuLabel={`Open actions for sale ${sale.customer_label || sale.id}`}
                       pdfHref={salesInvoicePdfHref}
                       detailsHref={sale.href}
+                      mobileModalId="sales-row-actions-modal"
                     />
                   </td>
                 </tr>
@@ -147,12 +189,48 @@ const skeletonRows = Array.from({ length: 6 });
       </table>
     </DashboardTableBoard>
   </template>
+
+  <TableRowActionsModal
+    id="sales-row-actions-modal"
+    title="Sale actions"
+    description="Choose an action for this sale."
+  />
+
+  <Modal
+    id="sales-filters-modal"
+    title="Filter sales"
+    description="Narrow sales by order source."
+  >
+    <div class="product-filter-modal">
+      <label class="product-filter-modal__field">
+        <span class="product-filter-modal__label">Source</span>
+        <select data-sales-filter-field="source" aria-label="Filter by source">
+          <option value="">All sources</option>
+          {orderSources.map((source) => (
+            <option value={source} selected={activeFilters.source === source}>
+              {formatOrderSource(source)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div class="product-filter-modal__actions">
+        <button type="button" class="product-filter-modal__clear" data-sales-filter-modal-clear>
+          Clear
+        </button>
+        <button type="button" class="product-filter-modal__apply" data-sales-filter-modal-apply>
+          Apply filters
+        </button>
+      </div>
+    </div>
+  </Modal>
 </section>
 
 <script>
+  import { initDashboardFilterModals } from "@/lib/client/dashboard-filter-modal";
   import { initDashboardFragmentTable } from "@/lib/client/dashboard-fragment-table";
 
   function initAdminSalesFilters() {
+    initDashboardFilterModals();
     initDashboardFragmentTable({
       cacheKey: "admin-sales-filter-cache-v1",
       fragmentPath: "/admin/sales-fragment",

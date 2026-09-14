@@ -1,5 +1,6 @@
 ---
 import type { NavigationItem } from "@/config/navigation";
+import AdminMobileSidebarChrome from "@/components/admin/AdminMobileSidebarChrome.astro";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar.astro";
 import AlertDialog from "@/components/ui/AlertDialog.astro";
 import type { DashboardSidebarUnreadBadge } from "@/lib/dashboard/sidebar-navigation";
@@ -61,9 +62,15 @@ const dashboardPageTransitionName = getDashboardPageTransitionName();
       ::view-transition-new(dashboard-main-content) {
         animation: none;
       }
+
+      html.dashboard-sidebar-mobile-open,
+      html.dashboard-sidebar-mobile-open body {
+        overflow: hidden;
+      }
     </style>
   </head>
-  <body class="dashboard-body admin-content-dashboard-body">
+  <body class="dashboard-body dashboard-body--admin admin-content-dashboard-body">
+    <AdminMobileSidebarChrome currentPath={Astro.url.pathname} />
     <div class="dashboard-frame admin-content-dashboard-frame">
       <DashboardSidebar navLabel={navLabel} sidebarUnreadBadges={sidebarUnreadBadges} />
       <main class="admin-content-dashboard-main">
@@ -125,6 +132,7 @@ const dashboardPageTransitionName = getDashboardPageTransitionName();
       import { initDashboardRouteLoading } from "@/lib/client/dashboard-route-loading";
       import { initDashboardSidebarUnreadBadges } from "@/lib/client/dashboard-sidebar-badges";
       import { initDashboardSidebarCollapse } from "@/lib/client/dashboard-sidebar";
+      import { initAdminMobileSidebar } from "@/lib/client/dashboard-admin-mobile-sidebar";
       import { initDashboardDetailLinkPrefetchOptOut } from "@/lib/client/dashboard-prefetch";
       import { initDashboardCellPopovers } from "@/lib/client/dashboard-cell-popover";
       import { initPageSectionContentEditors } from "@/lib/client/page-section-content-editor";
@@ -133,6 +141,7 @@ const dashboardPageTransitionName = getDashboardPageTransitionName();
       function initAdminContentDashboardFeatures() {
         initDashboardDetailLinkPrefetchOptOut();
         initDashboardSidebarCollapse();
+        initAdminMobileSidebar();
         initDashboardNavNavigation();
         initDashboardRouteLoading();
         initDashboardSidebarUnreadBadges();

@@ -1,0 +1,38 @@
+---
+import Modal from "@/components/ui/Modal.astro";
+import ActionMenuGlyph from "@/components/ActionMenuGlyph.astro";
+
+type Props = {
+  id: string;
+  title: string;
+  description?: string;
+};
+
+const { id, title, description = "Choose an action for this record." } = Astro.props;
+---
+
+<Modal id={id} title={title} description={description}>
+  <div class="order-documents-modal" data-table-row-actions-modal={id}>
+    <a
+      class="order-documents-modal__action"
+      href="#"
+      target="_blank"
+      rel="noreferrer"
+      hidden
+      data-table-row-action-pdf
+    >
+      <ActionMenuGlyph glyph="external-pdf" />
+      <span>Open PDF</span>
+    </a>
+    <a
+      class="order-documents-modal__action"
+      href="#"
+      data-astro-prefetch="false"
+      hidden
+      data-table-row-action-details
+    >
+      <ActionMenuGlyph glyph="details" />
+      <span data-table-row-action-details-label>Order Details</span>
+    </a>
+  </div>
+</Modal>

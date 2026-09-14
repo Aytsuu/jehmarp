@@ -1,11 +1,13 @@
 ---
 import ActionMenu from "@/components/ActionMenu.astro";
+import ActionMenuGlyph from "@/components/ActionMenuGlyph.astro";
 
 type Props = {
   menuLabel: string;
   pdfHref?: string;
   detailsHref?: string;
   detailsLabel?: string;
+  mobileModalId?: string;
 };
 
 const {
@@ -13,6 +15,7 @@ const {
   pdfHref,
   detailsHref,
   detailsLabel = "Order Details",
+  mobileModalId,
 } = Astro.props;
 
 const items = [
@@ -33,6 +36,33 @@ const items = [
       }
     : null,
 ].filter((item): item is NonNullable<typeof item> => item !== null);
+
+const hasActions = items.length > 0;
 ---
 
-<ActionMenu menuLabel={menuLabel} items={items} />
+{
+  mobileModalId ? (
+    <div class="table-action-menu-responsive">
+      <div class="table-action-menu-responsive__desktop">
+        <ActionMenu menuLabel={menuLabel} items={items} />
+      </div>
+      <button
+        type="button"
+        class="table-action-menu__trigger table-action-menu__trigger--icon table-action-menu-responsive__mobile"
+        aria-label={menuLabel}
+        data-table-row-action-trigger
+        data-open-dashboard-modal={mobileModalId}
+        data-row-action-pdf-href={pdfHref}
+        data-row-action-details-href={detailsHref}
+        data-row-action-details-label={detailsLabel}
+        data-row-action-menu-label={menuLabel}
+        aria-controls={mobileModalId}
+        disabled={!hasActions || undefined}
+      >
+        <ActionMenuGlyph glyph="vertical" />
+      </button>
+    </div>
+  ) : (
+    <ActionMenu menuLabel={menuLabel} items={items} />
+  )
+}

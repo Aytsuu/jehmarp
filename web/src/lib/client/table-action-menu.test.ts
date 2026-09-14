@@ -149,6 +149,48 @@ describe("initTableActionMenus", () => {
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
   });
 
+  it("keeps the menu open when a scroll event fires right after opening", () => {
+    const trigger = document.querySelector<HTMLButtonElement>(
+      "[data-table-action-menu-trigger]",
+    )!;
+    trigger.click();
+
+    document.dispatchEvent(new Event("scroll", { bubbles: true }));
+
+    const content = document.querySelector<HTMLElement>(
+      "[data-table-action-menu-content]",
+    )!;
+    expect(content.hidden).toBe(false);
+    expect(trigger.getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("portals menu content to the body so it is not clipped by overflow containers", () => {
+    document.body.innerHTML = `
+      <section style="overflow: hidden; height: 200px;">
+        <div class="table-action-menu" data-table-action-menu id="overflow-menu">
+          <button type="button" data-table-action-menu-trigger aria-expanded="false">Actions</button>
+          <div class="table-action-menu__content" data-table-action-menu-content hidden>
+            <button type="button" class="table-action-menu__item">Details</button>
+          </div>
+        </div>
+      </section>
+    `;
+    initTableActionMenus();
+
+    const trigger = document.querySelector<HTMLButtonElement>(
+      "[data-table-action-menu-trigger]",
+    )!;
+    trigger.click();
+
+    const content = document.querySelector<HTMLElement>(
+      '[data-table-action-menu-content][data-table-action-menu-owner="overflow-menu"]',
+    );
+
+    expect(content).not.toBeNull();
+    expect(content?.parentElement).toBe(document.body);
+    expect(content?.hidden).toBe(false);
+  });
+
   it("positions the menu within the dashboard main content bounds", () => {
     const main = document.querySelector<HTMLElement>(".dashboard-main")!;
 

@@ -1,6 +1,7 @@
 ---
 import type { NavigationItem } from "@/config/navigation";
 import AgentMobileChrome from "@/components/agent/AgentMobileChrome.astro";
+import AdminMobileSidebarChrome from "@/components/admin/AdminMobileSidebarChrome.astro";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar.astro";
 import AlertDialog from "@/components/ui/AlertDialog.astro";
 import type { DashboardSidebarUnreadBadge } from "@/lib/dashboard/sidebar-navigation";
@@ -20,6 +21,7 @@ type Props = {
 
 const { title, description, navLabel, sidebarUnreadBadges = {} } = Astro.props;
 const isAgentDashboard = navLabel === "Agent operations";
+const isAdminDashboard = Astro.url.pathname.startsWith("/admin");
 const isAgentMobilePrimary = isAgentDashboard && isAgentMobilePrimaryRoute(Astro.url.pathname);
 const dashboardPageTransitionName = getDashboardPageTransitionName();
 ---
@@ -83,7 +85,9 @@ const dashboardPageTransitionName = getDashboardPageTransitionName();
       }
 
       html.agent-mobile-nav-lock,
-      html.agent-mobile-nav-lock body {
+      html.agent-mobile-nav-lock body,
+      html.dashboard-sidebar-mobile-open,
+      html.dashboard-sidebar-mobile-open body {
         overflow: hidden;
       }
     </style>
@@ -92,6 +96,7 @@ const dashboardPageTransitionName = getDashboardPageTransitionName();
     class:list={[
       "dashboard-body",
       isAgentDashboard && "dashboard-body--agent",
+      isAdminDashboard && "dashboard-body--admin",
       isAgentMobilePrimary && "dashboard-body--agent-mobile-primary",
     ]}
   >
@@ -121,6 +126,21 @@ const dashboardPageTransitionName = getDashboardPageTransitionName();
           window.addEventListener("resize", syncAgentViewportHeight);
         }
       }
+
+      if (
+        location.pathname.startsWith("/admin") &&
+        window.matchMedia("(max-width: 63.99rem)").matches
+      ) {
+        const syncAdminViewportHeight = () => {
+          const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+          document.documentElement.style.setProperty("--app-viewport-height", `${Math.round(height)}px`);
+        };
+
+        syncAdminViewportHeight();
+        window.visualViewport?.addEventListener("resize", syncAdminViewportHeight);
+        window.visualViewport?.addEventListener("scroll", syncAdminViewportHeight);
+        window.addEventListener("resize", syncAdminViewportHeight);
+      }
     </script>
     {
       isAgentDashboard && (
@@ -128,6 +148,11 @@ const dashboardPageTransitionName = getDashboardPageTransitionName();
           currentPath={Astro.url.pathname}
           sidebarUnreadBadges={sidebarUnreadBadges}
         />
+      )
+    }
+    {
+      isAdminDashboard && (
+        <AdminMobileSidebarChrome currentPath={Astro.url.pathname} />
       )
     }
     <div class="dashboard-frame">
@@ -252,6 +277,7 @@ const dashboardPageTransitionName = getDashboardPageTransitionName();
       import { initDashboardRouteLoading } from "@/lib/client/dashboard-route-loading";
       import { initDashboardSidebarUnreadBadges } from "@/lib/client/dashboard-sidebar-badges";
       import { initDashboardSidebarCollapse } from "@/lib/client/dashboard-sidebar";
+      import { initAdminMobileSidebar } from "@/lib/client/dashboard-admin-mobile-sidebar";
       import { initOrderDetailTabs } from "@/lib/client/order-detail-tabs";
       import { initDashboardRecordPageRefresh } from "@/lib/client/order-detail-page";
       import { initDashboardDetailLinkPrefetchOptOut } from "@/lib/client/dashboard-prefetch";
@@ -260,6 +286,7 @@ const dashboardPageTransitionName = getDashboardPageTransitionName();
       import { initOrderPaymentFormToggle } from "@/lib/client/order-payment-form";
       import { initOrderStatusAutoSave } from "@/lib/client/order-status-auto-save";
       import { initTableActionMenus } from "@/lib/client/table-action-menu";
+      import { initTableRowActionModals } from "@/lib/client/table-row-action-modal";
       import { initAdminOrderBulkPdf } from "@/lib/client/admin-order-bulk-pdf";
       import { initAdminOrderPendingCustomersModal } from "@/lib/client/admin-order-pending-customers-modal";
       import { initAdminOrdersFragmentTable } from "@/lib/client/admin-orders-fragment-table";
@@ -829,6 +856,7 @@ const dashboardPageTransitionName = getDashboardPageTransitionName();
         initDashboardPostFormReloadOptOut();
         initDashboardDetailLinkPrefetchOptOut();
         initDashboardSidebarCollapse();
+        initAdminMobileSidebar();
         initAgentMobileNavigation();
         initDashboardNavNavigation();
         initDashboardRouteLoading();
@@ -848,6 +876,7 @@ const dashboardPageTransitionName = getDashboardPageTransitionName();
         initOrderPaymentFormToggle();
         initOrderStatusAutoSave();
         initTableActionMenus();
+        initTableRowActionModals();
         initAdminOrdersFragmentTable();
         initAdminOrderBulkPdf();
         initAdminOrderPendingCustomersModal();

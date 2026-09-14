@@ -1,4 +1,7 @@
-import { closeActiveTableActionMenu } from "@/lib/client/table-action-menu";
+import {
+  closeActiveTableActionMenu,
+  getPortaledMenuContent,
+} from "@/lib/client/table-action-menu";
 
 type BulkOrderPdfKind = "sales-invoice" | "order-slip";
 
@@ -25,8 +28,10 @@ let bulkPdfDelegationBound = false;
 export type OrderBulkPdfInitOptions = {
   sectionSelector: string;
   menuTriggerSelector: string;
+  mobileDocumentTriggerSelector?: string;
   checkboxRootSelector?: string;
   menuRootSelector?: string;
+  mobileDocumentModalSelector?: string;
 };
 
 type RegisteredBulkPdfOptions = OrderBulkPdfInitOptions;
@@ -80,8 +85,62 @@ function getSelectAllCheckbox(options: RegisteredBulkPdfOptions) {
   return getCheckboxRoot(options)?.querySelector<HTMLInputElement>("[data-order-select-all]") ?? null;
 }
 
-function getDocumentMenuTrigger(options: RegisteredBulkPdfOptions) {
-  return document.querySelector<HTMLButtonElement>(options.menuTriggerSelector);
+function menuRootContainsTarget(menuRoot: HTMLElement, target: Element) {
+  if (menuRoot.contains(target)) {
+    return true;
+  }
+
+  if (!menuRoot.id) {
+    return false;
+  }
+
+  const portaledContent = getPortaledMenuContent(menuRoot.id);
+  return portaledContent?.contains(target) ?? false;
+}
+
+function getActionRoots(options: RegisteredBulkPdfOptions) {
+  const roots: HTMLElement[] = [];
+
+  if (options.menuRootSelector) {
+    const menuRoot = document.querySelector<HTMLElement>(options.menuRootSelector);
+    if (menuRoot) roots.push(menuRoot);
+  }
+
+  if (options.mobileDocumentModalSelector) {
+    const modalRoot = document.querySelector<HTMLElement>(options.mobileDocumentModalSelector);
+    if (modalRoot) roots.push(modalRoot);
+  }
+
+  if (roots.length === 0) {
+    const fallback = document
+      .querySelector<HTMLButtonElement>(options.menuTriggerSelector)
+      ?.closest<HTMLElement>("[data-table-action-menu]");
+    if (fallback) roots.push(fallback);
+  }
+
+  return roots;
+}
+
+function getDocumentActionTriggers(options: RegisteredBulkPdfOptions) {
+  const triggers = getActionRoots(options)
+    .map((root) => root.querySelector<HTMLButtonElement>("[data-table-action-menu-trigger]"))
+    .filter((trigger): trigger is HTMLButtonElement => Boolean(trigger));
+
+  const desktopTrigger = document.querySelector<HTMLButtonElement>(options.menuTriggerSelector);
+  if (desktopTrigger && !triggers.includes(desktopTrigger)) {
+    triggers.push(desktopTrigger);
+  }
+
+  if (options.mobileDocumentTriggerSelector) {
+    const mobileTrigger = document.querySelector<HTMLButtonElement>(
+      options.mobileDocumentTriggerSelector,
+    );
+    if (mobileTrigger && !triggers.includes(mobileTrigger)) {
+      triggers.push(mobileTrigger);
+    }
+  }
+
+  return triggers;
 }
 
 function getSelectedSelections(options: RegisteredBulkPdfOptions) {
@@ -92,11 +151,10 @@ function getSelectedSelections(options: RegisteredBulkPdfOptions) {
 
 function updateDocumentMenuState(options: RegisteredBulkPdfOptions) {
   const hasSelection = getSelectedSelections(options).length > 0;
-  const documentMenuTrigger = getDocumentMenuTrigger(options);
 
-  if (documentMenuTrigger) {
-    documentMenuTrigger.disabled = !hasSelection;
-  }
+  getDocumentActionTriggers(options).forEach((trigger) => {
+    trigger.disabled = !hasSelection;
+  });
 }
 
 function updateSelectAllState(options: RegisteredBulkPdfOptions) {
@@ -164,6 +222,13 @@ function openBulkPdf(options: RegisteredBulkPdfOptions, kind: BulkOrderPdfKind) 
   window.open(`${bulkPdfEndpoints[kind]}?${params.toString()}`, "_blank", "noopener,noreferrer");
 }
 
+function closeMobileDocumentsModal(options: RegisteredBulkPdfOptions) {
+  if (!options.mobileDocumentModalSelector) return;
+
+  const modal = document.querySelector<HTMLElement>(options.mobileDocumentModalSelector);
+  modal?.querySelector<HTMLElement>("[data-dashboard-modal-close]")?.click();
+}
+
 function resolveBulkPdfOptionsForElement(element: Element) {
   for (const options of registeredBulkPdfOptions.values()) {
     const section = getSection(options);
@@ -201,11 +266,9 @@ function bindBulkPdfDelegation() {
     if (!(target instanceof Element)) return;
 
     for (const options of registeredBulkPdfOptions.values()) {
-      const menuRoot = options.menuRootSelector
-        ? document.querySelector<HTMLElement>(options.menuRootSelector)
-        : getDocumentMenuTrigger(options)?.closest<HTMLElement>("[data-table-action-menu]");
-
-      if (!menuRoot?.contains(target)) continue;
+      const actionRoots = getActionRoots(options);
+      const matchingRoot = actionRoots.find((root) => menuRootContainsTarget(root, target));
+      if (!matchingRoot) continue;
 
       const menuItem = target.closest<HTMLElement>("[data-action-menu-item]");
       if (!menuItem) continue;
@@ -215,6 +278,8 @@ function bindBulkPdfDelegation() {
       if (!kind) return;
 
       openBulkPdf(options, kind);
+      closeMobileDocumentsModal(options);
+      closeActiveTableActionMenu();
       return;
     }
   });
@@ -253,7 +318,9 @@ export function initAdminOrderBulkPdf() {
     sectionSelector: "#admin-orders",
     checkboxRootSelector: "#admin-orders [data-order-table-shell]",
     menuTriggerSelector: "#admin-orders-document-menu [data-table-action-menu-trigger]",
+    mobileDocumentTriggerSelector: "#admin-orders [data-order-document-modal-trigger]",
     menuRootSelector: "#admin-orders-document-menu",
+    mobileDocumentModalSelector: "#order-documents-modal",
   });
 }
 

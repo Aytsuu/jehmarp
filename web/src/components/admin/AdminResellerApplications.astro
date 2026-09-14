@@ -6,6 +6,7 @@ import DashboardTableNumberHeader from "@/components/dashboard/DashboardTableNum
 import DashboardTablePagination from "@/components/dashboard/DashboardTablePagination.astro";
 import ResellerEmailDeliveryStatus from "@/components/admin/ResellerEmailDeliveryStatus.astro";
 import StatusBadge from "@/components/dashboard/StatusBadge.astro";
+import Modal from "@/components/ui/Modal.astro";
 import Popover from "@/components/ui/Popover.astro";
 import type { AdminResellerApplicationManagementData } from "@/lib/admin-dashboard/data";
 import type { AdminResellerApplicationFilters } from "@/lib/admin-dashboard/reseller-application-filters";
@@ -24,20 +25,76 @@ const { data, applicationStatuses, activeFilters, filterQuery } = Astro.props;
 const skeletonRows = Array.from({ length: 6 });
 ---
 
-<section class="admin-panel" aria-labelledby="admin-reseller-applications-title">
+<section
+  id="admin-reseller-applications"
+  class="admin-panel"
+  data-admin-reseller-applications-page
+  aria-labelledby="admin-reseller-applications-title"
+>
   <div data-interactive-table data-server-pagination="true" class="dashboard-interactive-table">
     <div class="table-filters order-management-toolbar">
-      <form method="get" action="/admin/reseller-applications" class="order-filter-form order-filter-form--paired" data-reseller-filter-form data-current-filter-query={filterQuery} aria-label="Filter reseller applications">
-        <div class="order-filter-form__field order-filter-form__field--search">
-          <input name="search" type="search" value={activeFilters.search ?? ""} placeholder="Search applicant name, email, or contact..." autocomplete="off" aria-label="Search reseller applications" data-reseller-search-input />
+      <form
+        method="get"
+        action="/admin/reseller-applications"
+        class="order-filter-form order-filter-form--paired"
+        data-reseller-filter-form
+        data-current-filter-query={filterQuery}
+        aria-label="Filter reseller applications"
+      >
+        <div class="product-filter-form__search-row">
+          <div class="order-filter-form__field order-filter-form__field--search">
+            <input
+              name="search"
+              type="search"
+              value={activeFilters.search ?? ""}
+              placeholder="Search applicant name, email, or contact..."
+              autocomplete="off"
+              aria-label="Search reseller applications"
+              data-reseller-search-input
+            />
+          </div>
+          <div class="product-filter-form__toolbar-actions">
+            <button
+              type="button"
+              class="product-filter-form__icon-trigger"
+              data-reseller-filter-modal-trigger
+              data-open-dashboard-modal="reseller-filters-modal"
+              aria-label="Open reseller application filters"
+              aria-pressed="false"
+              aria-controls="reseller-filters-modal"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+              </svg>
+            </button>
+          </div>
         </div>
-        <div class="order-filter-form__field">
-          <select name="status" aria-label="Filter by status">
-            <option value="">All statuses</option>
-            {applicationStatuses.map((status) => (
-              <option value={status} selected={activeFilters.status === status}>{autoCapitalize(status)}</option>
-            ))}
-          </select>
+        <div class="product-filter-form__advanced-filters">
+          <div class="order-filter-form__field">
+            <select
+              name="status"
+              data-reseller-filter-field="status"
+              aria-label="Filter by status"
+            >
+              <option value="">All statuses</option>
+              {applicationStatuses.map((status) => (
+                <option value={status} selected={activeFilters.status === status}>
+                  {autoCapitalize(status)}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </form>
       <div class="order-management-toolbar__actions">
@@ -156,13 +213,43 @@ const skeletonRows = Array.from({ length: 6 });
       </table>
     </DashboardTableBoard>
   </template>
+
+  <Modal
+    id="reseller-filters-modal"
+    title="Filter reseller applications"
+    description="Narrow applications by status."
+  >
+    <div class="product-filter-modal">
+      <label class="product-filter-modal__field">
+        <span class="product-filter-modal__label">Status</span>
+        <select data-reseller-filter-field="status" aria-label="Filter by status">
+          <option value="">All statuses</option>
+          {applicationStatuses.map((status) => (
+            <option value={status} selected={activeFilters.status === status}>
+              {autoCapitalize(status)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div class="product-filter-modal__actions">
+        <button type="button" class="product-filter-modal__clear" data-reseller-filter-modal-clear>
+          Clear
+        </button>
+        <button type="button" class="product-filter-modal__apply" data-reseller-filter-modal-apply>
+          Apply filters
+        </button>
+      </div>
+    </div>
+  </Modal>
 </section>
 
 <script>
+  import { initDashboardFilterModals } from "@/lib/client/dashboard-filter-modal";
   import { initDashboardFragmentTable } from "@/lib/client/dashboard-fragment-table";
   import { formatSidebarUnreadCount } from "@/lib/dashboard/sidebar-navigation";
 
   function initAdminResellerFilters() {
+    initDashboardFilterModals();
     initDashboardFragmentTable({
       cacheKey: "admin-reseller-filter-cache-v2",
       fragmentPath: "/admin/reseller-applications-fragment",

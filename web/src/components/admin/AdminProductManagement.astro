@@ -5,6 +5,7 @@ import DashboardTableNumberHeader from "@/components/dashboard/DashboardTableNum
 import DashboardTablePagination from "@/components/dashboard/DashboardTablePagination.astro";
 import StatusBadge from "@/components/dashboard/StatusBadge.astro";
 import Button from "@/components/ui/Button.astro";
+import Modal from "@/components/ui/Modal.astro";
 import Popover from "@/components/ui/Popover.astro";
 import Sheet from "@/components/ui/Sheet.astro";
 import type { AdminProductManagementData } from "@/lib/admin-dashboard/data";
@@ -50,6 +51,7 @@ function formatStockStatus(status: string): string {
 <section
   id="admin-products"
   class="admin-panel"
+  data-admin-products-page
   aria-labelledby="admin-products-title"
 >
   <Sheet
@@ -304,6 +306,7 @@ function formatStockStatus(status: string): string {
   >
     <div class="table-filters product-management-toolbar">
       <form
+        id="product-filter-form"
         method="get"
         action="/admin/products"
         class="product-filter-form product-filter-form--triple"
@@ -311,48 +314,109 @@ function formatStockStatus(status: string): string {
         data-current-filter-query={filterQuery}
         aria-label="Filter products"
       >
-        <div
-          class="product-filter-form__field product-filter-form__field--search"
-        >
-          <input
-            name="search"
-            type="search"
-            value={activeFilters.search ?? ""}
-            placeholder="Search products..."
-            autocomplete="off"
-            aria-label="Search products"
-            data-product-search-input
-          />
+        <div class="product-filter-form__search-row">
+          <div
+            class="product-filter-form__field product-filter-form__field--search"
+          >
+            <input
+              name="search"
+              type="search"
+              value={activeFilters.search ?? ""}
+              placeholder="Search products..."
+              autocomplete="off"
+              aria-label="Search products"
+              data-product-search-input
+            />
+          </div>
+          <div class="product-filter-form__toolbar-actions">
+            <button
+              type="button"
+              class="product-filter-form__icon-trigger"
+              data-product-filter-modal-trigger
+              data-open-dashboard-modal="product-filters-modal"
+              aria-label="Open product filters"
+              aria-pressed="false"
+              aria-controls="product-filters-modal"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="product-filter-form__icon-trigger product-filter-form__create-trigger"
+              data-open-create-sheet
+              data-sheet-target="#create-product-sheet"
+              aria-label="Create product"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+          </div>
         </div>
-        <div class="product-filter-form__field">
-          <select name="stockStatus" aria-label="Filter by stock status">
-            <option value="">All statuses</option>
-            {
-              stockStatuses.map((status) => (
-                <option
-                  value={status}
-                  selected={activeFilters.stockStatus === status}
-                >
-                  {formatStockStatus(status)}
-                </option>
-              ))
-            }
-          </select>
-        </div>
-        <div class="product-filter-form__field">
-          <select name="category" aria-label="Filter by category">
-            <option value="">All categories</option>
-            {
-              productCategories.map((category) => (
-                <option
-                  value={category}
-                  selected={activeFilters.category === category}
-                >
-                  {category}
-                </option>
-              ))
-            }
-          </select>
+        <div class="product-filter-form__advanced-filters">
+          <div class="product-filter-form__field">
+            <select
+              name="stockStatus"
+              data-product-filter-field="stockStatus"
+              aria-label="Filter by stock status"
+            >
+              <option value="">All statuses</option>
+              {
+                stockStatuses.map((status) => (
+                  <option
+                    value={status}
+                    selected={activeFilters.stockStatus === status}
+                  >
+                    {formatStockStatus(status)}
+                  </option>
+                ))
+              }
+            </select>
+          </div>
+          <div class="product-filter-form__field">
+            <select
+              name="category"
+              data-product-filter-field="category"
+              aria-label="Filter by category"
+            >
+              <option value="">All categories</option>
+              {
+                productCategories.map((category) => (
+                  <option
+                    value={category}
+                    selected={activeFilters.category === category}
+                  >
+                    {category}
+                  </option>
+                ))
+              }
+            </select>
+          </div>
         </div>
       </form>
       <div class="product-management-toolbar__actions">
@@ -1033,6 +1097,69 @@ function formatStockStatus(status: string): string {
     <DashboardTablePagination pagination={data.pagination} />
   </div>
 
+  <Modal
+    id="product-filters-modal"
+    title="Filter products"
+    description="Narrow products by status and category."
+  >
+    <div class="product-filter-modal">
+      <label class="product-filter-modal__field">
+        <span class="product-filter-modal__label">Stock status</span>
+        <select
+          data-product-filter-field="stockStatus"
+          aria-label="Filter by stock status"
+        >
+          <option value="">All statuses</option>
+          {
+            stockStatuses.map((status) => (
+              <option
+                value={status}
+                selected={activeFilters.stockStatus === status}
+              >
+                {formatStockStatus(status)}
+              </option>
+            ))
+          }
+        </select>
+      </label>
+      <label class="product-filter-modal__field">
+        <span class="product-filter-modal__label">Category</span>
+        <select
+          data-product-filter-field="category"
+          aria-label="Filter by category"
+        >
+          <option value="">All categories</option>
+          {
+            productCategories.map((category) => (
+              <option
+                value={category}
+                selected={activeFilters.category === category}
+              >
+                {category}
+              </option>
+            ))
+          }
+        </select>
+      </label>
+      <div class="product-filter-modal__actions">
+        <button
+          type="button"
+          class="product-filter-modal__clear"
+          data-product-filter-modal-clear
+        >
+          Clear
+        </button>
+        <button
+          type="button"
+          class="product-filter-modal__apply"
+          data-product-filter-modal-apply
+        >
+          Apply filters
+        </button>
+      </div>
+    </div>
+  </Modal>
+
   <template data-product-filter-skeleton>
     <DashboardTableBoard aria-busy="true" aria-live="polite">
       <table
@@ -1091,8 +1218,10 @@ function formatStockStatus(status: string): string {
 
 <script>
   import { initDashboardFragmentTable } from "@/lib/client/dashboard-fragment-table";
+  import { initProductFilterModal } from "@/lib/client/product-filter-modal";
 
   function initAdminProductFilters() {
+    initProductFilterModal();
     initDashboardFragmentTable({
       cacheKey: "admin-products-filter-cache-v2",
       fragmentPath: "/admin/products-fragment",

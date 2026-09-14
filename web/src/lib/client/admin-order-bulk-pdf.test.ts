@@ -69,6 +69,12 @@ function getDocumentTrigger() {
   );
 }
 
+function getMobileDocumentTrigger() {
+  return document.querySelector<HTMLButtonElement>(
+    "[data-order-document-modal-trigger]",
+  );
+}
+
 function getRowCheckboxes() {
   return Array.from(
     document.querySelectorAll<HTMLInputElement>("[data-order-row-checkbox]"),
@@ -96,6 +102,76 @@ describe("initAdminOrderBulkPdf", () => {
     getRowCheckboxes()[0]!.dispatchEvent(new Event("change", { bubbles: true }));
 
     expect(trigger?.disabled).toBe(false);
+  });
+
+  it("opens bulk pdf from the mobile documents modal when it is portaled outside the section", () => {
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+
+    document.body.innerHTML = `
+      <section id="admin-orders">
+        <div data-order-table-shell>
+          <input
+            type="checkbox"
+            value="order-1"
+            data-order-row-checkbox
+            data-order-row-type="customer"
+            checked
+          />
+        </div>
+      </section>
+      <div id="order-documents-modal">
+        <button type="button" data-dashboard-modal-close>Close</button>
+        <button type="button" data-action-menu-item data-action="bulk-sales-invoice-pdf">
+          Sales Invoice
+        </button>
+      </div>
+    `;
+
+    initAdminOrderBulkPdf();
+
+    document.querySelector<HTMLButtonElement>("[data-action-menu-item]")?.click();
+
+    expect(openSpy).toHaveBeenCalledWith(
+      expect.stringContaining("/admin/orders/bulk-sales-invoice.pdf"),
+      "_blank",
+      "noopener,noreferrer",
+    );
+  });
+
+  it("enables the mobile document modal trigger when a row checkbox is selected", () => {
+    document.body.innerHTML = `
+      <section id="admin-orders">
+        <button type="button" data-order-document-modal-trigger disabled>Document</button>
+        <div id="order-documents-modal">
+          <button type="button" data-action-menu-item data-action="bulk-order-slip-pdf">
+            Order Slip
+          </button>
+        </div>
+        <div class="table-action-menu" id="admin-orders-document-menu">
+          <button type="button" data-table-action-menu-trigger disabled>Document</button>
+        </div>
+        <div data-order-table-shell>
+          <input
+            type="checkbox"
+            value="order-1"
+            data-order-row-checkbox
+            data-order-row-type="customer"
+          />
+        </div>
+      </section>
+    `;
+
+    initAdminOrderBulkPdf();
+
+    const mobileTrigger = getMobileDocumentTrigger();
+    expect(mobileTrigger?.disabled).toBe(true);
+
+    const rowCheckbox = document.querySelector<HTMLInputElement>("[data-order-row-checkbox]")!;
+    rowCheckbox.checked = true;
+    rowCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
+
+    expect(mobileTrigger?.disabled).toBe(false);
+    expect(getDocumentTrigger()?.disabled).toBe(false);
   });
 
   it("selects every row when the header checkbox is toggled", () => {
