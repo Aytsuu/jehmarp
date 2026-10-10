@@ -9,7 +9,7 @@ import {
   getDocumentHeaderBrandLines,
 } from "@/lib/platform-settings/document-templates";
 import type { DocumentLayoutOptions } from "@/lib/platform-settings/types";
-import { resolvePublicStorageUrl } from "@/lib/supabase/storage";
+import { resolveBrandLogoUrl } from "@/lib/platform-settings/default-logo";
 
 const orderSlipColumnWidths = [145, 60, 75, 75, 160] as const;
 const salesInvoiceColumnWidths = [235, 80, 100, 100] as const;
@@ -187,7 +187,7 @@ export function getDocumentColumnTemplate(columns: DocumentTableColumn[]) {
 }
 
 export function resolveDocumentLogoUrl(options: DocumentLayoutOptions = {}) {
-  return resolvePublicStorageUrl(options.businessProfile?.logoPath ?? null);
+  return resolveBrandLogoUrl(options.businessProfile?.logoPath ?? null);
 }
 
 export function getSellerName(

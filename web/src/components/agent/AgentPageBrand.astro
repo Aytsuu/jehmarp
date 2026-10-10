@@ -1,22 +1,16 @@
 ---
 import { loadPlatformSettings } from "@/lib/platform-settings";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { resolvePublicStorageUrl } from "@/lib/supabase/storage";
+import { resolveBrandLogoUrl } from "@/lib/platform-settings/default-logo";
 
 const platformSettings = await loadPlatformSettings(createSupabaseAdminClient());
 const brandText = platformSettings.businessProfile.tradeName || "JEHMARP";
-const logoUrl = resolvePublicStorageUrl(platformSettings.businessProfile.logoPath);
+const logoUrl = resolveBrandLogoUrl(platformSettings.businessProfile.logoPath);
 ---
 
 <div class="agent-page-brand">
   <a class="agent-page-brand__link" href="/">
-    {
-      logoUrl ? (
-        <img src={logoUrl} alt="" class="agent-page-brand__logo" />
-      ) : (
-        <span class="agent-page-brand__mark" aria-hidden="true">Logo</span>
-      )
-    }
+    <img src={logoUrl} alt="" class="agent-page-brand__logo" />
     <span class="agent-page-brand__name">{brandText}</span>
   </a>
 </div>

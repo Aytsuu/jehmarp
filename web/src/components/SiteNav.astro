@@ -6,7 +6,7 @@ import {
 } from "@/lib/public-website/admin-content-preview";
 import { loadPlatformSettings } from "@/lib/platform-settings";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { resolvePublicStorageUrl } from "@/lib/supabase/storage";
+import { resolveBrandLogoUrl } from "@/lib/platform-settings/default-logo";
 
 type Props = {
   activePath?: string;
@@ -47,7 +47,7 @@ const navItems = [
 
 const platformSettings = await loadPlatformSettings(createSupabaseAdminClient());
 const brandText = platformSettings.businessProfile.tradeName || "JEHMARP";
-const logoUrl = resolvePublicStorageUrl(platformSettings.businessProfile.logoPath);
+const logoUrl = resolveBrandLogoUrl(platformSettings.businessProfile.logoPath);
 ---
 
 <header class="site-nav" data-site-nav-smart-scroll={disableSmartScroll ? undefined : ""}>
@@ -60,11 +60,7 @@ const logoUrl = resolvePublicStorageUrl(platformSettings.businessProfile.logoPat
   </div>
   <nav class="site-nav__inner" aria-label="Primary navigation">
     <a class="site-nav__brand" href={linkHref("/")}>
-      {logoUrl ? (
-        <img src={logoUrl} alt="" class="site-nav__brand-logo" />
-      ) : (
-        <span class="site-nav__brand-mark" aria-hidden="true">Logo</span>
-      )}
+      <img src={logoUrl} alt="" class="site-nav__brand-logo" />
       <span class="site-nav__brand-text">{brandText}</span>
     </a>
     <button

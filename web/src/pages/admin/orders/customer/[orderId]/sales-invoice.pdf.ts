@@ -21,7 +21,10 @@ export const GET: APIRoute = async (context) => {
     return new Response("Order not found.", { status: 404 });
   }
 
-  const [order, documentLayout] = await Promise.all([loadAdminOrder(orderId), loadDocumentPdfLayoutOptions()]);
+  const [order, documentLayout] = await Promise.all([
+    loadAdminOrder(orderId),
+    loadDocumentPdfLayoutOptions(),
+  ]);
   if (!order) return new Response("Order not found.", { status: 404 });
   const invoice = order.invoice[0];
   if (!invoice) return new Response("Invoice not found.", { status: 404 });

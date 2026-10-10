@@ -1,6 +1,14 @@
+import { Buffer } from "node:buffer";
+
+import {
+  DEFAULT_DOCUMENT_LOGO_FLATE_BASE64,
+  DEFAULT_DOCUMENT_LOGO_HEIGHT,
+  DEFAULT_DOCUMENT_LOGO_WIDTH,
+} from "@/lib/order-documents/default-document-logo";
+import { prepareDocumentLogoImage } from "@/lib/order-documents/pdf-logo-image";
 import type { DocumentLogoImage } from "@/lib/platform-settings/types";
-import { PRODUCT_IMAGE_BUCKET } from "@/lib/supabase/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { PRODUCT_IMAGE_BUCKET } from "@/lib/supabase/storage";
 
 export const DOCUMENT_LOGO_IMAGE_NAME = "ImLogo";
 
@@ -8,37 +16,52 @@ export async function loadDocumentLogoImage(
   logoPath: string | null | undefined,
   supabase: ReturnType<typeof createSupabaseAdminClient> = createSupabaseAdminClient(),
 ): Promise<DocumentLogoImage | null> {
-  if (!logoPath?.trim()) {
-    return null;
+  if (logoPath?.trim()) {
+    const uploadedLogo = await loadDocumentLogoImageFromStorage(logoPath, supabase);
+    if (uploadedLogo) {
+      return uploadedLogo;
+    }
   }
 
+  return loadBundledDefaultDocumentLogoImage();
+}
+
+async function loadDocumentLogoImageFromStorage(
+  logoPath: string,
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+): Promise<DocumentLogoImage | null> {
   const { data, error } = await supabase.storage.from(PRODUCT_IMAGE_BUCKET).download(logoPath);
   if (error || !data) {
     return null;
   }
 
-  const input = Buffer.from(await data.arrayBuffer());
-  const sharp = (await import("sharp")).default;
-  const metadata = await sharp(input, { animated: true }).metadata();
-  const width = metadata.width ?? 0;
-  const height = metadata.height ?? 0;
+  const input = new Uint8Array(await data.arrayBuffer());
+  return toDocumentLogoImage(prepareDocumentLogoImage(input));
+}
 
-  if (width < 1 || height < 1) {
+function loadBundledDefaultDocumentLogoImage(): DocumentLogoImage {
+  return {
+    name: DOCUMENT_LOGO_IMAGE_NAME,
+    width: DEFAULT_DOCUMENT_LOGO_WIDTH,
+    height: DEFAULT_DOCUMENT_LOGO_HEIGHT,
+    filter: "FlateDecode",
+    bytes: Uint8Array.from(Buffer.from(DEFAULT_DOCUMENT_LOGO_FLATE_BASE64, "base64")),
+  };
+}
+
+function toDocumentLogoImage(
+  prepared: ReturnType<typeof prepareDocumentLogoImage>,
+): DocumentLogoImage | null {
+  if (!prepared) {
     return null;
   }
 
-  const jpegBytes = new Uint8Array(
-    await sharp(input, { animated: true })
-      .flatten({ background: "#ffffff" })
-      .jpeg({ quality: 90 })
-      .toBuffer(),
-  );
-
   return {
     name: DOCUMENT_LOGO_IMAGE_NAME,
-    width,
-    height,
-    jpegBytes,
+    width: prepared.width,
+    height: prepared.height,
+    filter: prepared.filter,
+    bytes: prepared.bytes,
   };
 }
 

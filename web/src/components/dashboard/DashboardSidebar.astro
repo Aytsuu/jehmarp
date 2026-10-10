@@ -11,7 +11,7 @@ import {
 } from "@/lib/page-availability";
 import { loadPlatformSettings } from "@/lib/platform-settings";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { resolvePublicStorageUrl } from "@/lib/supabase/storage";
+import { resolveBrandLogoUrl } from "@/lib/platform-settings/default-logo";
 
 type Props = {
   navLabel: string;
@@ -24,7 +24,7 @@ const categories = getDashboardSidebarCategories(isAdmin);
 const routeStatuses = getDashboardRouteStatuses();
 const platformSettings = await loadPlatformSettings(createSupabaseAdminClient());
 const brandText = platformSettings.businessProfile.tradeName || "JEHMARP";
-const logoUrl = resolvePublicStorageUrl(platformSettings.businessProfile.logoPath);
+const logoUrl = resolveBrandLogoUrl(platformSettings.businessProfile.logoPath);
 ---
 
 <div
@@ -35,11 +35,7 @@ const logoUrl = resolvePublicStorageUrl(platformSettings.businessProfile.logoPat
   <aside class="dashboard-sidebar" aria-labelledby="dashboard-sidebar-title">
     <div class="dashboard-sidebar__header">
       <a class="dashboard-sidebar__brand" href="/">
-        {logoUrl ? (
-          <img src={logoUrl} alt="" class="site-nav__brand-logo" />
-        ) : (
-          <span class="site-nav__brand-mark" aria-hidden="true">Logo</span>
-        )}
+        <img src={logoUrl} alt="" class="site-nav__brand-logo" />
         <span class="dashboard-sidebar__brand-text">{brandText}</span>
       </a>
       {

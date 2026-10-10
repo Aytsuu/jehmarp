@@ -107,8 +107,8 @@ describe("document logo", () => {
     expect(buildSalesInvoiceLayout(order, options).logoUrl).toContain("platform/logo-test.png");
   });
 
-  it("returns null when no logo is configured", () => {
-    expect(buildOrderSlipLayout(order).logoUrl).toBeNull();
-    expect(buildSalesInvoiceLayout(order).logoUrl).toBeNull();
+  it("falls back to the default web logo when no upload is configured", () => {
+    expect(buildOrderSlipLayout(order).logoUrl).toBe("/default_logo.png");
+    expect(buildSalesInvoiceLayout(order).logoUrl).toBe("/default_logo.png");
   });
 });
