@@ -1,3 +1,5 @@
+import { deflateSync } from "node:zlib";
+
 import { describe, expect, it } from "vitest";
 
 import type { AdminOrder } from "./data";
@@ -84,6 +86,28 @@ describe("buildOrderSlipPdf", () => {
     expect(text).toContain("/F2 8 Tf");
     expect(text).toContain("I hereby confirm the above order");
     expect(text).toContain("%%EOF");
+  });
+
+  it("embeds a flate-encoded logo image", () => {
+    const pdf = buildOrderSlipPdf({
+      created_at: "2026-07-03T00:00:00.000Z",
+      customer: null,
+      agent: null,
+      customer_order_item: [],
+    } as unknown as AdminOrder, {
+      logoImage: {
+        name: "ImLogo",
+        width: 1,
+        height: 1,
+        filter: "FlateDecode",
+        bytes: new Uint8Array(deflateSync(Buffer.from([255, 0, 0]))),
+      },
+    });
+    const text = new TextDecoder("latin1").decode(pdf);
+
+    expect(text).toContain("/ImLogo Do");
+    expect(text).toContain("/Filter /FlateDecode");
+    expect(text).not.toContain("(LOGO)");
   });
 
   it("creates additional PDF pages when an order has more than ten items", () => {

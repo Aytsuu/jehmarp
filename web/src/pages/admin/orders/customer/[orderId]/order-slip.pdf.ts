@@ -21,7 +21,10 @@ export const GET: APIRoute = async (context) => {
     return new Response("Order not found.", { status: 404 });
   }
 
-  const [order, documentLayout] = await Promise.all([loadAdminOrder(orderId), loadDocumentPdfLayoutOptions()]);
+  const [order, documentLayout] = await Promise.all([
+    loadAdminOrder(orderId),
+    loadDocumentPdfLayoutOptions(),
+  ]);
   if (!order) return new Response("Order not found.", { status: 404 });
   const pdf = buildOrderSlipPdf(order, documentLayout);
   const body = new ArrayBuffer(pdf.byteLength);

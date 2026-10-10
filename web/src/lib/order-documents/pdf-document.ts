@@ -40,8 +40,8 @@ export function buildPdfDocument(
 
   if (logoImage) {
     objects.push({
-      header: `<< /Type /XObject /Subtype /Image /Width ${logoImage.width} /Height ${logoImage.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${logoImage.jpegBytes.byteLength} >>\nstream\n`,
-      bytes: logoImage.jpegBytes,
+      header: `<< /Type /XObject /Subtype /Image /Width ${logoImage.width} /Height ${logoImage.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /${logoImage.filter} /Length ${logoImage.bytes.byteLength} >>\nstream\n`,
+      bytes: logoImage.bytes,
       footer: "\nendstream",
     });
   }

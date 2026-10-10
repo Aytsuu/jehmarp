@@ -1,7 +1,10 @@
 ---
 import type { PlatformSettings } from "@/lib/platform-settings";
 import Button from "@/components/ui/Button.astro";
-import { resolvePublicStorageUrl } from "@/lib/supabase/storage";
+import {
+  hasCustomBrandLogo,
+  resolveBrandLogoUrl,
+} from "@/lib/platform-settings/default-logo";
 
 type Props = {
   settings: PlatformSettings;
@@ -9,7 +12,8 @@ type Props = {
 
 const { settings } = Astro.props;
 const profile = settings.businessProfile;
-const logoUrl = resolvePublicStorageUrl(profile.logoPath);
+const hasCustomLogo = hasCustomBrandLogo(profile.logoPath);
+const logoUrl = resolveBrandLogoUrl(profile.logoPath);
 ---
 
 <section class="admin-settings-card" data-admin-settings-general>
@@ -48,22 +52,21 @@ const logoUrl = resolvePublicStorageUrl(profile.logoPath);
         <div
           class:list={[
             "admin-content-editable admin-content-editable--image admin-settings-logo-editable",
-            !logoUrl && "is-empty",
+            !hasCustomLogo && "is-empty",
           ]}
           data-settings-logo-editable
         >
           <div class="admin-content-editable__surface">
             <img
-              src={logoUrl ?? ""}
+              src={logoUrl}
               alt=""
               class="admin-settings-logo-field__preview"
               data-settings-logo-preview
-              hidden={!logoUrl}
             />
             <div
               class="admin-settings-logo-field__placeholder"
               data-settings-logo-placeholder
-              hidden={Boolean(logoUrl)}
+              hidden
             >
               No logo uploaded
             </div>

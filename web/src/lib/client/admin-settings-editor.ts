@@ -3,6 +3,10 @@ import {
   captureFormSnapshot,
   formHasChanges,
 } from "@/lib/client/dashboard-cell-popover-form-state";
+import {
+  DEFAULT_WEB_LOGO_URL,
+  hasCustomBrandLogo,
+} from "@/lib/platform-settings/default-logo";
 import { resolvePublicStorageUrl } from "@/lib/supabase/storage";
 
 type AdminActionJsonResponse = {
@@ -61,21 +65,21 @@ function syncLogoPreview(form: HTMLFormElement, logoUrl: string | null, logoPath
 
   const preview = form.querySelector<HTMLImageElement>("[data-settings-logo-preview]");
   const placeholder = form.querySelector<HTMLElement>("[data-settings-logo-placeholder]");
+  const hasCustomLogo = hasCustomBrandLogo(logoPath);
+  const displayLogoUrl = logoUrl ?? DEFAULT_WEB_LOGO_URL;
 
-  if (logoUrl && preview) {
-    preview.src = logoUrl;
+  if (preview) {
+    preview.src = displayLogoUrl;
     preview.hidden = false;
+  }
+
+  if (hasCustomLogo) {
     placeholder?.setAttribute("hidden", "true");
     syncLogoEmptyState(form, true);
     return;
   }
 
-  if (preview) {
-    preview.hidden = true;
-    preview.removeAttribute("src");
-  }
-
-  placeholder?.removeAttribute("hidden");
+  placeholder?.setAttribute("hidden", "true");
   syncLogoEmptyState(form, false);
 }
 

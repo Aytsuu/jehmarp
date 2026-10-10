@@ -119,7 +119,8 @@ export type DocumentLogoImage = {
   name: string;
   width: number;
   height: number;
-  jpegBytes: Uint8Array;
+  filter: "DCTDecode" | "FlateDecode";
+  bytes: Uint8Array;
 };
 
 export type DocumentLayoutOptions = {
