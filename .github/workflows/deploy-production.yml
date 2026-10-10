@@ -224,7 +224,15 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
 
+      - name: Cache web node_modules
+        id: web-node-modules
+        uses: actions/cache@v4
+        with:
+          path: web/node_modules
+          key: web-node-modules-${{ runner.os }}-node-22-${{ hashFiles('web/package-lock.json') }}
+
       - name: Install web dependencies
+        if: steps.web-node-modules.outputs.cache-hit != 'true'
         working-directory: web
         run: npm ci
 
@@ -344,7 +352,15 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
 
+      - name: Cache web node_modules
+        id: web-node-modules
+        uses: actions/cache@v4
+        with:
+          path: web/node_modules
+          key: web-node-modules-${{ runner.os }}-node-22-${{ hashFiles('web/package-lock.json') }}
+
       - name: Install web dependencies
+        if: steps.web-node-modules.outputs.cache-hit != 'true'
         working-directory: web
         run: npm ci
 
@@ -377,7 +393,15 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
 
+      - name: Cache web node_modules
+        id: web-node-modules
+        uses: actions/cache@v4
+        with:
+          path: web/node_modules
+          key: web-node-modules-${{ runner.os }}-node-22-${{ hashFiles('web/package-lock.json') }}
+
       - name: Install web dependencies
+        if: steps.web-node-modules.outputs.cache-hit != 'true'
         working-directory: web
         run: npm ci
 
@@ -415,7 +439,15 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
 
+      - name: Cache web node_modules
+        id: web-node-modules
+        uses: actions/cache@v4
+        with:
+          path: web/node_modules
+          key: web-node-modules-${{ runner.os }}-node-22-${{ hashFiles('web/package-lock.json') }}
+
       - name: Install web dependencies
+        if: steps.web-node-modules.outputs.cache-hit != 'true'
         working-directory: web
         run: npm ci
 
@@ -588,7 +620,15 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
 
+      - name: Cache web node_modules
+        id: web-node-modules
+        uses: actions/cache@v4
+        with:
+          path: web/node_modules
+          key: web-node-modules-${{ runner.os }}-node-22-${{ hashFiles('web/package-lock.json') }}
+
       - name: Install web dependencies
+        if: steps.web-node-modules.outputs.cache-hit != 'true'
         working-directory: web
         run: npm ci
 
