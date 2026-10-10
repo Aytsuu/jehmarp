@@ -52,7 +52,7 @@
   "overrides": {
     "path-to-regexp": "^6.3.0",
     "yaml": "^2.9.0",
-    "sharp": "^0.35.4",
+    "sharp": "^0.35.5",
     "svgo": "^4.0.2"
   }
 }
