@@ -1,5 +1,6 @@
 ---
 import DashboardTableActionsHeader from "@/components/dashboard/DashboardTableActionsHeader.astro";
+import AdminProductSortHeader from "@/components/admin/AdminProductSortHeader.astro";
 import DashboardTableBoard from "@/components/dashboard/DashboardTableBoard.astro";
 import DashboardTableEmptyState from "@/components/dashboard/DashboardTableEmptyState.astro";
 import DashboardTableNumberHeader from "@/components/dashboard/DashboardTableNumberHeader.astro";
@@ -214,6 +215,8 @@ function formatRegistrationAgentLabel(agent: (typeof activeAgents)[number]) {
         data-current-filter-query={filterQuery}
         aria-label="Filter customers"
       >
+        <input type="hidden" name="sort" value={activeFilters.sort ?? ""} data-customer-sort-input />
+        <input type="hidden" name="direction" value={activeFilters.direction ?? ""} data-customer-direction-input />
         <div class="product-filter-form__search-row">
           <div class="order-filter-form__field order-filter-form__field--search">
             <input
@@ -394,14 +397,14 @@ function formatRegistrationAgentLabel(agent: (typeof activeAgents)[number]) {
           <thead>
             <tr>
               <DashboardTableNumberHeader />
-              <th scope="col">Date Created</th>
-              <th scope="col">Customer</th>
+              <AdminProductSortHeader column="created_at" label="Date Created" sortScope="customer" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+              <AdminProductSortHeader column="customer_name" label="Customer" sortScope="customer" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
               <th scope="col">Tracking</th>
               <th scope="col">Email</th>
               <th scope="col">Contact</th>
-              <th scope="col">Type</th>
-              <th scope="col">Assigned Agent</th>
-              <th scope="col">Credit</th>
+              <AdminProductSortHeader column="is_reseller" label="Type" sortScope="customer" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+              <AdminProductSortHeader column="assigned_agent_name" label="Assigned Agent" sortScope="customer" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+              <AdminProductSortHeader column="outstanding_credit_balance" label="Credit" sortScope="customer" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
               <DashboardTableActionsHeader />
             </tr>
           </thead>
@@ -603,14 +606,14 @@ function formatRegistrationAgentLabel(agent: (typeof activeAgents)[number]) {
         <thead>
           <tr>
             <DashboardTableNumberHeader />
-            <th scope="col">Date Created</th>
-            <th scope="col">Customer</th>
+            <AdminProductSortHeader column="created_at" label="Date Created" sortScope="customer" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+            <AdminProductSortHeader column="customer_name" label="Customer" sortScope="customer" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
             <th scope="col">Tracking</th>
             <th scope="col">Email</th>
             <th scope="col">Contact</th>
-            <th scope="col">Type</th>
-            <th scope="col">Assigned Agent</th>
-            <th scope="col">Credit</th>
+            <AdminProductSortHeader column="is_reseller" label="Type" sortScope="customer" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+            <AdminProductSortHeader column="assigned_agent_name" label="Assigned Agent" sortScope="customer" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+            <AdminProductSortHeader column="outstanding_credit_balance" label="Credit" sortScope="customer" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
             <DashboardTableActionsHeader />
           </tr>
         </thead>
@@ -646,9 +649,11 @@ function formatRegistrationAgentLabel(agent: (typeof activeAgents)[number]) {
 </style>
 
 <script>
+  import { initAdminListSort } from "@/lib/client/admin-list-sort";
   import { initDashboardFilterPopovers } from "@/lib/client/dashboard-filter-popover";
   import { initDashboardFragmentTable } from "@/lib/client/dashboard-fragment-table";
   import { initUiPicker } from "@/lib/client/ui-picker";
+  import { isAdminCustomerSortColumn, nextAdminCustomerSort } from "@/lib/admin-dashboard/customer-sort";
 
   function initRegistrationLinkPicker() {
     const form = document.querySelector<HTMLFormElement>("[data-customer-registration-link-form]");
@@ -690,15 +695,25 @@ function formatRegistrationAgentLabel(agent: (typeof activeAgents)[number]) {
   function initAdminCustomerFilters() {
     initDashboardFilterPopovers();
     initDashboardFragmentTable({
-      cacheKey: "admin-customers-filter-cache-v2",
+      cacheKey: "admin-customers-filter-cache-v3",
       fragmentPath: "/admin/customers-fragment",
       pagePath: "/admin/customers",
       formSelector: "[data-customer-filter-form]",
       tableShellSelector: "[data-customer-table-shell]",
       skeletonTemplateSelector: "[data-customer-filter-skeleton]",
-      filterKeys: ["search", "customerType"],
+      filterKeys: ["search", "customerType", "sort", "direction"],
       searchInputSelector: "[data-customer-search-input]",
       historyStateKey: "customerFilterQuery",
+    });
+    initAdminListSort({
+      buttonSelector: "[data-customer-sort]",
+      pageSelector: "[data-admin-customers-page]",
+      formSelector: "[data-customer-filter-form]",
+      sortInputSelector: "[data-customer-sort-input]",
+      directionInputSelector: "[data-customer-direction-input]",
+      readColumn: (button) => button.dataset.customerSort,
+      isColumn: isAdminCustomerSortColumn,
+      nextSort: nextAdminCustomerSort,
     });
   }
 

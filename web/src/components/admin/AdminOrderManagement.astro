@@ -1,4 +1,5 @@
 ---
+import AdminProductSortHeader from "@/components/admin/AdminProductSortHeader.astro";
 import Accordion from "@/components/ui/Accordion.astro";
 import ActionMenu, { type ActionMenuItem } from "@/components/ActionMenu.astro";
 import Modal from "@/components/ui/Modal.astro";
@@ -460,6 +461,18 @@ function linkedCustomerOrdersLabel(count: number) {
         data-current-filter-query={filterQuery}
         aria-label="Filter orders"
       >
+        <input
+          type="hidden"
+          name="sort"
+          value={activeFilters.sort ?? ""}
+          data-order-sort-input
+        />
+        <input
+          type="hidden"
+          name="direction"
+          value={activeFilters.direction ?? ""}
+          data-order-direction-input
+        />
         <div class="product-filter-form__search-row">
           <div class="order-filter-form__field order-filter-form__field--search">
             <input
@@ -708,14 +721,38 @@ function linkedCustomerOrdersLabel(count: number) {
                   <input type="checkbox" data-order-select-all />
                 </label>
               </th>
-              <th scope="col">Date Created</th>
+              <AdminProductSortHeader
+                column="created_at"
+                label="Date Created"
+                sortScope="order"
+                activeSort={activeFilters.sort}
+                activeDirection={activeFilters.direction}
+              />
               <th scope="col">Order ID</th>
-              <th scope="col">Customer</th>
+              <AdminProductSortHeader
+                column="customer_label"
+                label="Customer"
+                sortScope="order"
+                activeSort={activeFilters.sort}
+                activeDirection={activeFilters.direction}
+              />
               <th scope="col">Source</th>
               <th scope="col">Order Status</th>
               <th scope="col">Payment Status</th>
-              <th scope="col">Order Total</th>
-              <th scope="col">Remaining Receivable</th>
+              <AdminProductSortHeader
+                column="order_total"
+                label="Order Total"
+                sortScope="order"
+                activeSort={activeFilters.sort}
+                activeDirection={activeFilters.direction}
+              />
+              <AdminProductSortHeader
+                column="remaining_receivable"
+                label="Remaining Receivable"
+                sortScope="order"
+                activeSort={activeFilters.sort}
+                activeDirection={activeFilters.direction}
+              />
               <DashboardTableActionsHeader />
             </tr>
           </thead>
@@ -832,14 +869,38 @@ function linkedCustomerOrdersLabel(count: number) {
             <th scope="col" class="dashboard-table__select-column">
               <span class="table-skeleton-block table-skeleton-block--short"></span>
             </th>
-            <th scope="col">Date Created</th>
+            <AdminProductSortHeader
+              column="created_at"
+              label="Date Created"
+              sortScope="order"
+              activeSort={activeFilters.sort}
+              activeDirection={activeFilters.direction}
+            />
             <th scope="col">Order ID</th>
-            <th scope="col">Customer</th>
+            <AdminProductSortHeader
+              column="customer_label"
+              label="Customer"
+              sortScope="order"
+              activeSort={activeFilters.sort}
+              activeDirection={activeFilters.direction}
+            />
             <th scope="col">Source</th>
             <th scope="col">Order Status</th>
             <th scope="col">Payment Status</th>
-            <th scope="col">Order Total</th>
-            <th scope="col">Remaining Receivable</th>
+            <AdminProductSortHeader
+              column="order_total"
+              label="Order Total"
+              sortScope="order"
+              activeSort={activeFilters.sort}
+              activeDirection={activeFilters.direction}
+            />
+            <AdminProductSortHeader
+              column="remaining_receivable"
+              label="Remaining Receivable"
+              sortScope="order"
+              activeSort={activeFilters.sort}
+              activeDirection={activeFilters.direction}
+            />
             <DashboardTableActionsHeader />
           </tr>
         </thead>
@@ -893,6 +954,7 @@ function linkedCustomerOrdersLabel(count: number) {
 <script>
   import { initAdminCreateOrderSheet } from "@/lib/client/admin-create-order-sheet";
   import { initAdminOrderBulkPdf } from "@/lib/client/admin-order-bulk-pdf";
+  import { initAdminOrderSort } from "@/lib/client/admin-order-sort";
   import { initAdminOrdersFragmentTable } from "@/lib/client/admin-orders-fragment-table";
   import { initOrderFilterPopover } from "@/lib/client/order-filter-popover";
 
@@ -910,6 +972,7 @@ function linkedCustomerOrdersLabel(count: number) {
   function initAdminOrderFilters() {
     initOrderFilterPopover();
     initAdminOrdersFragmentTable();
+    initAdminOrderSort();
   }
 
   document.addEventListener("DOMContentLoaded", initAdminOrderFilters);

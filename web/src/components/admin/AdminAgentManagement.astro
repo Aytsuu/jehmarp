@@ -1,5 +1,6 @@
 ---
 import DashboardTableActionsHeader from "@/components/dashboard/DashboardTableActionsHeader.astro";
+import AdminProductSortHeader from "@/components/admin/AdminProductSortHeader.astro";
 import DashboardTableBoard from "@/components/dashboard/DashboardTableBoard.astro";
 import DashboardTableEmptyState from "@/components/dashboard/DashboardTableEmptyState.astro";
 import DashboardTableNumberHeader from "@/components/dashboard/DashboardTableNumberHeader.astro";
@@ -113,6 +114,8 @@ const hasActiveFilters = activeFilterCount > 0;
         data-current-filter-query={filterQuery}
         aria-label="Filter agents"
       >
+        <input type="hidden" name="sort" value={activeFilters.sort ?? ""} data-agent-sort-input />
+        <input type="hidden" name="direction" value={activeFilters.direction ?? ""} data-agent-direction-input />
         <div class="product-filter-form__search-row">
           <div class="order-filter-form__field order-filter-form__field--search">
             <input
@@ -268,9 +271,9 @@ const hasActiveFilters = activeFilterCount > 0;
           <thead>
             <tr>
               <DashboardTableNumberHeader />
-              <th scope="col">Date Created</th>
+              <AdminProductSortHeader column="created_at" label="Date Created" sortScope="agent" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
               <th scope="col">Agent Code</th>
-              <th scope="col">Agent</th>
+              <AdminProductSortHeader column="display_name" label="Agent" sortScope="agent" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
               <th scope="col">Employee ID</th>
               <th scope="col">Email</th>
               <th scope="col">Contact</th>
@@ -397,7 +400,7 @@ const hasActiveFilters = activeFilterCount > 0;
     <DashboardTableBoard aria-busy="true" aria-live="polite">
       <table class="product-table-skeleton dashboard-table">
         <caption class="sr-only">Loading filtered agents</caption>
-        <thead><tr><DashboardTableNumberHeader /><th scope="col">Date Created</th><th scope="col">Agent Code</th><th scope="col">Agent</th><th scope="col">Employee ID</th><th scope="col">Email</th><th scope="col">Contact</th><DashboardTableActionsHeader /></tr></thead>
+        <thead><tr><DashboardTableNumberHeader /><AdminProductSortHeader column="created_at" label="Date Created" sortScope="agent" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} /><th scope="col">Agent Code</th><AdminProductSortHeader column="display_name" label="Agent" sortScope="agent" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} /><th scope="col">Employee ID</th><th scope="col">Email</th><th scope="col">Contact</th><DashboardTableActionsHeader /></tr></thead>
         <tbody>{skeletonRows.map(() => (<tr><td><span class="table-skeleton-block table-skeleton-block--short"></span></td><td><span class="table-skeleton-block table-skeleton-block--short"></span></td><td><span class="table-skeleton-block"></span></td><td><span class="table-skeleton-block table-skeleton-block--short"></span></td><td><span class="table-skeleton-block"></span></td><td><span class="table-skeleton-block"></span></td><td><span class="table-skeleton-block table-skeleton-block--short"></span></td><td><span class="table-skeleton-block table-skeleton-block--short"></span></td></tr>))}</tbody>
       </table>
     </DashboardTableBoard>
@@ -406,21 +409,33 @@ const hasActiveFilters = activeFilterCount > 0;
 </section>
 
 <script>
+  import { initAdminListSort } from "@/lib/client/admin-list-sort";
   import { initDashboardFilterPopovers } from "@/lib/client/dashboard-filter-popover";
   import { initDashboardFragmentTable } from "@/lib/client/dashboard-fragment-table";
+  import { isAdminAgentSortColumn, nextAdminAgentSort } from "@/lib/admin-dashboard/agent-sort";
 
   function initAdminAgentFilters() {
     initDashboardFilterPopovers();
     initDashboardFragmentTable({
-      cacheKey: "admin-agents-filter-cache-v2",
+      cacheKey: "admin-agents-filter-cache-v3",
       fragmentPath: "/admin/agents-fragment",
       pagePath: "/admin/agents",
       formSelector: "[data-agent-filter-form]",
       tableShellSelector: "[data-agent-table-shell]",
       skeletonTemplateSelector: "[data-agent-filter-skeleton]",
-      filterKeys: ["search", "status"],
+      filterKeys: ["search", "status", "sort", "direction"],
       searchInputSelector: "[data-agent-search-input]",
       historyStateKey: "agentFilterQuery",
+    });
+    initAdminListSort({
+      buttonSelector: "[data-agent-sort]",
+      pageSelector: "[data-admin-agents-page]",
+      formSelector: "[data-agent-filter-form]",
+      sortInputSelector: "[data-agent-sort-input]",
+      directionInputSelector: "[data-agent-direction-input]",
+      readColumn: (button) => button.dataset.agentSort,
+      isColumn: isAdminAgentSortColumn,
+      nextSort: nextAdminAgentSort,
     });
   }
   document.addEventListener("DOMContentLoaded", initAdminAgentFilters);

@@ -1,5 +1,6 @@
 ---
 import DashboardTableActionsHeader from "@/components/dashboard/DashboardTableActionsHeader.astro";
+import AdminProductSortHeader from "@/components/admin/AdminProductSortHeader.astro";
 import DashboardTableBoard from "@/components/dashboard/DashboardTableBoard.astro";
 import DashboardTableEmptyState from "@/components/dashboard/DashboardTableEmptyState.astro";
 import DashboardTableNumberHeader from "@/components/dashboard/DashboardTableNumberHeader.astro";
@@ -45,6 +46,8 @@ function formatBalanceStatus(status: (typeof invoiceBalanceStatuses)[number]) {
         data-current-filter-query={filterQuery}
         aria-label="Filter invoices"
       >
+        <input type="hidden" name="sort" value={activeFilters.sort ?? ""} data-invoice-sort-input />
+        <input type="hidden" name="direction" value={activeFilters.direction ?? ""} data-invoice-direction-input />
         <div class="product-filter-form__search-row">
           <div class="order-filter-form__field order-filter-form__field--search">
             <input
@@ -175,12 +178,12 @@ function formatBalanceStatus(status: (typeof invoiceBalanceStatuses)[number]) {
           <thead>
             <tr>
               <DashboardTableNumberHeader />
-              <th scope="col">Date Created</th>
+              <AdminProductSortHeader column="invoice_created_at" label="Date Created" sortScope="invoice" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
               <th scope="col">Invoice Number</th>
-              <th scope="col">Customer</th>
-              <th scope="col">Invoice Total</th>
-              <th scope="col">Paid</th>
-              <th scope="col">Balance</th>
+              <AdminProductSortHeader column="customer_label" label="Customer" sortScope="invoice" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+              <AdminProductSortHeader column="invoice_total" label="Invoice Total" sortScope="invoice" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+              <AdminProductSortHeader column="paid_total" label="Paid" sortScope="invoice" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+              <AdminProductSortHeader column="balance" label="Balance" sortScope="invoice" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
               <DashboardTableActionsHeader />
             </tr>
           </thead>
@@ -233,12 +236,12 @@ function formatBalanceStatus(status: (typeof invoiceBalanceStatuses)[number]) {
         <thead>
           <tr>
             <DashboardTableNumberHeader />
-            <th scope="col">Date Created</th>
+            <AdminProductSortHeader column="invoice_created_at" label="Date Created" sortScope="invoice" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
             <th scope="col">Invoice Number</th>
-            <th scope="col">Customer</th>
-            <th scope="col">Invoice Total</th>
-            <th scope="col">Paid</th>
-            <th scope="col">Balance</th>
+            <AdminProductSortHeader column="customer_label" label="Customer" sortScope="invoice" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+            <AdminProductSortHeader column="invoice_total" label="Invoice Total" sortScope="invoice" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+            <AdminProductSortHeader column="paid_total" label="Paid" sortScope="invoice" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+            <AdminProductSortHeader column="balance" label="Balance" sortScope="invoice" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
             <DashboardTableActionsHeader />
           </tr>
         </thead>
@@ -269,21 +272,33 @@ function formatBalanceStatus(status: (typeof invoiceBalanceStatuses)[number]) {
 </section>
 
 <script>
+  import { initAdminListSort } from "@/lib/client/admin-list-sort";
   import { initDashboardFilterPopovers } from "@/lib/client/dashboard-filter-popover";
   import { initDashboardFragmentTable } from "@/lib/client/dashboard-fragment-table";
+  import { isAdminInvoiceSortColumn, nextAdminInvoiceSort } from "@/lib/admin-dashboard/invoice-sort";
 
   function initAdminInvoiceFilters() {
     initDashboardFilterPopovers();
     initDashboardFragmentTable({
-      cacheKey: "admin-invoices-filter-cache-v2",
+      cacheKey: "admin-invoices-filter-cache-v3",
       fragmentPath: "/admin/invoices-fragment",
       pagePath: "/admin/invoices",
       formSelector: "[data-invoice-filter-form]",
       tableShellSelector: "[data-invoice-table-shell]",
       skeletonTemplateSelector: "[data-invoice-filter-skeleton]",
-      filterKeys: ["search", "balanceStatus"],
+      filterKeys: ["search", "balanceStatus", "sort", "direction"],
       searchInputSelector: "[data-invoice-search-input]",
       historyStateKey: "invoiceFilterQuery",
+    });
+    initAdminListSort({
+      buttonSelector: "[data-invoice-sort]",
+      pageSelector: "[data-admin-invoices-page]",
+      formSelector: "[data-invoice-filter-form]",
+      sortInputSelector: "[data-invoice-sort-input]",
+      directionInputSelector: "[data-invoice-direction-input]",
+      readColumn: (button) => button.dataset.invoiceSort,
+      isColumn: isAdminInvoiceSortColumn,
+      nextSort: nextAdminInvoiceSort,
     });
   }
 

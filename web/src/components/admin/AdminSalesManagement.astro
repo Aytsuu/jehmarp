@@ -1,5 +1,6 @@
 ---
 import DashboardTableActionsHeader from "@/components/dashboard/DashboardTableActionsHeader.astro";
+import AdminProductSortHeader from "@/components/admin/AdminProductSortHeader.astro";
 import DashboardTableBoard from "@/components/dashboard/DashboardTableBoard.astro";
 import DashboardTableEmptyState from "@/components/dashboard/DashboardTableEmptyState.astro";
 import DashboardTableNumberHeader from "@/components/dashboard/DashboardTableNumberHeader.astro";
@@ -7,7 +8,7 @@ import DashboardTablePagination from "@/components/dashboard/DashboardTablePagin
 import TableActionMenu from "@/components/TableActionMenu.astro";
 import TableRowActionsModal from "@/components/TableRowActionsModal.astro";
 import type { AdminSalesManagementData } from "@/lib/admin-dashboard/data";
-import type { AdminOrderFilters } from "@/lib/admin-dashboard/order-filters";
+import type { AdminSalesFilters } from "@/lib/admin-dashboard/sales-filters";
 import { orderSources } from "@/lib/admin-dashboard/order-filters";
 import { dashboardTableRowNumber } from "@/lib/admin-dashboard/pagination";
 import { formatCurrency, formatDate, formatSalePaymentSummary } from "@/lib/admin-dashboard/view";
@@ -15,7 +16,7 @@ import { formatOrderSource } from "@/lib/formatters";
 
 type Props = {
   data: AdminSalesManagementData;
-  activeFilters: AdminOrderFilters;
+  activeFilters: AdminSalesFilters;
   filterQuery: string;
 };
 
@@ -41,6 +42,8 @@ const hasActiveFilters = activeFilterCount > 0;
         data-current-filter-query={filterQuery}
         aria-label="Filter sales"
       >
+        <input type="hidden" name="sort" value={activeFilters.sort ?? ""} data-sales-sort-input />
+        <input type="hidden" name="direction" value={activeFilters.direction ?? ""} data-sales-direction-input />
         <div class="product-filter-form__search-row">
           <div class="order-filter-form__field order-filter-form__field--search">
             <input
@@ -171,13 +174,13 @@ const hasActiveFilters = activeFilterCount > 0;
           <thead>
             <tr>
               <DashboardTableNumberHeader />
-              <th scope="col">Order Date</th>
-              <th scope="col">Sale Date</th>
-              <th scope="col">Customer</th>
+              <AdminProductSortHeader column="created_at" label="Order Date" sortScope="sales" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+              <AdminProductSortHeader column="sale_date_value" label="Sale Date" sortScope="sales" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+              <AdminProductSortHeader column="customer_label" label="Customer" sortScope="sales" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
               <th scope="col">Source</th>
-              <th scope="col">Gross Amount</th>
-              <th scope="col">Net Amount</th>
-              <th scope="col">Payments</th>
+              <AdminProductSortHeader column="order_total" label="Gross Amount" sortScope="sales" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+              <AdminProductSortHeader column="net_total" label="Net Amount" sortScope="sales" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+              <AdminProductSortHeader column="payment_count" label="Payments" sortScope="sales" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
               <DashboardTableActionsHeader />
             </tr>
           </thead>
@@ -228,13 +231,13 @@ const hasActiveFilters = activeFilterCount > 0;
         <thead>
           <tr>
             <DashboardTableNumberHeader />
-            <th scope="col">Order Date</th>
-            <th scope="col">Sale Date</th>
-            <th scope="col">Customer</th>
+            <AdminProductSortHeader column="created_at" label="Order Date" sortScope="sales" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+            <AdminProductSortHeader column="sale_date_value" label="Sale Date" sortScope="sales" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+            <AdminProductSortHeader column="customer_label" label="Customer" sortScope="sales" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
             <th scope="col">Source</th>
-            <th scope="col">Gross Amount</th>
-            <th scope="col">Net Amount</th>
-            <th scope="col">Payments</th>
+            <AdminProductSortHeader column="order_total" label="Gross Amount" sortScope="sales" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+            <AdminProductSortHeader column="net_total" label="Net Amount" sortScope="sales" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+            <AdminProductSortHeader column="payment_count" label="Payments" sortScope="sales" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
             <DashboardTableActionsHeader />
           </tr>
         </thead>
@@ -266,21 +269,33 @@ const hasActiveFilters = activeFilterCount > 0;
 </section>
 
 <script>
+  import { initAdminListSort } from "@/lib/client/admin-list-sort";
   import { initDashboardFilterPopovers } from "@/lib/client/dashboard-filter-popover";
   import { initDashboardFragmentTable } from "@/lib/client/dashboard-fragment-table";
+  import { isAdminSalesSortColumn, nextAdminSalesSort } from "@/lib/admin-dashboard/sales-sort";
 
   function initAdminSalesFilters() {
     initDashboardFilterPopovers();
     initDashboardFragmentTable({
-      cacheKey: "admin-sales-filter-cache-v1",
+      cacheKey: "admin-sales-filter-cache-v2",
       fragmentPath: "/admin/sales-fragment",
       pagePath: "/admin/sales",
       formSelector: "[data-sales-filter-form]",
       tableShellSelector: "[data-sales-table-shell]",
       skeletonTemplateSelector: "[data-sales-filter-skeleton]",
-      filterKeys: ["search", "source"],
+      filterKeys: ["search", "source", "sort", "direction"],
       searchInputSelector: "[data-sales-search-input]",
       historyStateKey: "salesFilterQuery",
+    });
+    initAdminListSort({
+      buttonSelector: "[data-sales-sort]",
+      pageSelector: "[data-admin-sales-page]",
+      formSelector: "[data-sales-filter-form]",
+      sortInputSelector: "[data-sales-sort-input]",
+      directionInputSelector: "[data-sales-direction-input]",
+      readColumn: (button) => button.dataset.salesSort,
+      isColumn: isAdminSalesSortColumn,
+      nextSort: nextAdminSalesSort,
     });
   }
 

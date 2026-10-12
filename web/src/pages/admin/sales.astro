@@ -7,9 +7,9 @@ import {
   loadAdminSalesManagementData,
 } from "@/lib/admin-dashboard/data";
 import {
-  parseAdminOrderFilters,
-  serializeAdminOrderFilters,
-} from "@/lib/admin-dashboard/order-filters";
+  parseAdminSalesFilters,
+  serializeAdminSalesFilters,
+} from "@/lib/admin-dashboard/sales-filters";
 import {
   mergeAdminPaginationQuery,
   parseAdminPagination,
@@ -24,19 +24,15 @@ if (!adminRoute.ready) {
   return adminRoute.response;
 }
 
-const salesFilters = parseAdminOrderFilters(Astro.url);
-const visibleSalesFilters = {
-  search: salesFilters.search,
-  source: salesFilters.source,
-};
+const salesFilters = parseAdminSalesFilters(Astro.url);
 const salesPagination = parseAdminPagination(Astro.url);
 const salesFilterQuery = mergeAdminPaginationQuery(
-  serializeAdminOrderFilters(visibleSalesFilters),
+  serializeAdminSalesFilters(salesFilters),
   salesPagination,
 );
 const [dashboardData, data] = await Promise.all([
   loadAdminDashboardData(),
-  loadAdminSalesManagementData(visibleSalesFilters, salesPagination),
+  loadAdminSalesManagementData(salesFilters, salesPagination),
 ]);
 const feedback = formatAdminActionFeedback(Astro.url);
 ---
@@ -51,7 +47,7 @@ const feedback = formatAdminActionFeedback(Astro.url);
 >
   <AdminSalesManagement
     data={data}
-    activeFilters={visibleSalesFilters}
+    activeFilters={salesFilters}
     filterQuery={salesFilterQuery}
   />
 </AdminPageFrame>

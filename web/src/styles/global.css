@@ -12930,6 +12930,43 @@
     text-overflow: ellipsis;
   }
 
+  .dashboard-table__sort {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    color: inherit;
+    font-size: inherit;
+    font-weight: 500;
+    letter-spacing: normal;
+    line-height: inherit;
+    text-transform: none;
+  }
+
+  .dashboard-table__sort span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dashboard-table__sort svg {
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  .dashboard-table__sort:hover:not(:disabled),
+  .dashboard-table__sort:focus-visible:not(:disabled) {
+    background: none;
+    color: var(--color-brand-red);
+  }
+
   .dashboard-table td {
     white-space: nowrap;
     text-overflow: ellipsis;

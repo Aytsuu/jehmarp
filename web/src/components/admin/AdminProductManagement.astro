@@ -1,4 +1,5 @@
 ---
+import AdminProductSortHeader from "@/components/admin/AdminProductSortHeader.astro";
 import DashboardTableBoard from "@/components/dashboard/DashboardTableBoard.astro";
 import DashboardTableEmptyState from "@/components/dashboard/DashboardTableEmptyState.astro";
 import DashboardTableNumberHeader from "@/components/dashboard/DashboardTableNumberHeader.astro";
@@ -317,6 +318,18 @@ const hasActiveFilters = activeFilterCount > 0;
         data-current-filter-query={filterQuery}
         aria-label="Filter products"
       >
+        <input
+          type="hidden"
+          name="sort"
+          value={activeFilters.sort ?? ""}
+          data-product-sort-input
+        />
+        <input
+          type="hidden"
+          name="direction"
+          value={activeFilters.direction ?? ""}
+          data-product-direction-input
+        />
         <div class="product-filter-form__search-row">
           <div
             class="product-filter-form__field product-filter-form__field--search"
@@ -535,13 +548,32 @@ const hasActiveFilters = activeFilterCount > 0;
                   <input type="checkbox" data-product-select-all />
                 </label>
               </th>
-              <th scope="col">Date Created</th>
-              <th scope="col" class="dashboard-table__cell--product">
-                Product
-              </th>
+              <AdminProductSortHeader
+                column="created_at"
+                label="Date Created"
+                activeSort={activeFilters.sort}
+                activeDirection={activeFilters.direction}
+              />
+              <AdminProductSortHeader
+                column="name"
+                label="Product"
+                headerClass="dashboard-table__cell--product"
+                activeSort={activeFilters.sort}
+                activeDirection={activeFilters.direction}
+              />
               <th scope="col">Description</th>
-              <th scope="col">Pricing</th>
-              <th scope="col">Commission</th>
+              <AdminProductSortHeader
+                column="default_price"
+                label="Pricing"
+                activeSort={activeFilters.sort}
+                activeDirection={activeFilters.direction}
+              />
+              <AdminProductSortHeader
+                column="agent_commission_value"
+                label="Commission"
+                activeSort={activeFilters.sort}
+                activeDirection={activeFilters.direction}
+              />
               <th scope="col">Status</th>
             </tr>
           </thead>
@@ -1220,13 +1252,32 @@ const hasActiveFilters = activeFilterCount > 0;
             <th scope="col" class="dashboard-table__select-column">
               <span class="table-skeleton-block table-skeleton-block--short"></span>
             </th>
-            <th scope="col">Date Created</th>
-            <th scope="col" class="dashboard-table__cell--product">
-              Product
-            </th>
+            <AdminProductSortHeader
+              column="created_at"
+              label="Date Created"
+              activeSort={activeFilters.sort}
+              activeDirection={activeFilters.direction}
+            />
+            <AdminProductSortHeader
+              column="name"
+              label="Product"
+              headerClass="dashboard-table__cell--product"
+              activeSort={activeFilters.sort}
+              activeDirection={activeFilters.direction}
+            />
             <th scope="col">Description</th>
-            <th scope="col">Pricing</th>
-            <th scope="col">Commission</th>
+            <AdminProductSortHeader
+              column="default_price"
+              label="Pricing"
+              activeSort={activeFilters.sort}
+              activeDirection={activeFilters.direction}
+            />
+            <AdminProductSortHeader
+              column="agent_commission_value"
+              label="Commission"
+              activeSort={activeFilters.sort}
+              activeDirection={activeFilters.direction}
+            />
             <th scope="col">Status</th>
           </tr>
         </thead>
@@ -1286,20 +1337,22 @@ const hasActiveFilters = activeFilterCount > 0;
 
 <script>
   import { initAdminProductSelection } from "@/lib/client/admin-product-selection";
+  import { initAdminProductSort } from "@/lib/client/admin-product-sort";
   import { initDashboardFragmentTable } from "@/lib/client/dashboard-fragment-table";
   import { initProductFilterPopover } from "@/lib/client/product-filter-popover";
 
   function initAdminProductFilters() {
     initAdminProductSelection();
+    initAdminProductSort();
     initProductFilterPopover();
     initDashboardFragmentTable({
-      cacheKey: "admin-products-filter-cache-v2",
+      cacheKey: "admin-products-filter-cache-v3",
       fragmentPath: "/admin/products-fragment",
       pagePath: "/admin/products",
       formSelector: "[data-product-filter-form]",
       tableShellSelector: "[data-product-table-shell]",
       skeletonTemplateSelector: "[data-product-filter-skeleton]",
-      filterKeys: ["search", "category", "stockStatus"],
+      filterKeys: ["search", "category", "stockStatus", "sort", "direction"],
       searchInputSelector: "[data-product-search-input]",
       historyStateKey: "productFilterQuery",
     });

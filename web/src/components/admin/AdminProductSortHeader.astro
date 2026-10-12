@@ -1,0 +1,82 @@
+---
+type Props = {
+  column: string;
+  label: string;
+  activeSort?: string;
+  activeDirection?: "asc" | "desc";
+  headerClass?: string;
+  sortScope?: string;
+};
+
+const {
+  column,
+  label,
+  activeSort,
+  activeDirection,
+  headerClass,
+  sortScope = "product",
+} = Astro.props;
+const isActive = activeSort === column && Boolean(activeDirection);
+const ariaSort = !isActive
+  ? "none"
+  : activeDirection === "asc" ? "ascending" : "descending";
+---
+
+<th scope="col" class={headerClass} aria-sort={ariaSort}>
+  <button type="button" class="dashboard-table__sort" {...{ [`data-${sortScope}-sort`]: column }}>
+    <span>{label}</span>
+    {
+      isActive && activeDirection === "asc" ? (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="m5 12 7-7 7 7"></path>
+          <path d="M12 19V5"></path>
+        </svg>
+      ) : isActive && activeDirection === "desc" ? (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 5v14"></path>
+          <path d="m19 12-7 7-7-7"></path>
+        </svg>
+      ) : (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="m21 16-4 4-4-4"></path>
+          <path d="M17 20V4"></path>
+          <path d="m3 8 4-4 4 4"></path>
+          <path d="M7 4v16"></path>
+        </svg>
+      )
+    }
+  </button>
+</th>

@@ -1,5 +1,6 @@
 ---
 import DashboardTableActionsHeader from "@/components/dashboard/DashboardTableActionsHeader.astro";
+import AdminProductSortHeader from "@/components/admin/AdminProductSortHeader.astro";
 import DashboardTableBoard from "@/components/dashboard/DashboardTableBoard.astro";
 import DashboardTableEmptyState from "@/components/dashboard/DashboardTableEmptyState.astro";
 import DashboardTableNumberHeader from "@/components/dashboard/DashboardTableNumberHeader.astro";
@@ -42,6 +43,8 @@ const hasActiveFilters = activeFilterCount > 0;
         data-current-filter-query={filterQuery}
         aria-label="Filter reseller applications"
       >
+        <input type="hidden" name="sort" value={activeFilters.sort ?? ""} data-reseller-sort-input />
+        <input type="hidden" name="direction" value={activeFilters.direction ?? ""} data-reseller-direction-input />
         <div class="product-filter-form__search-row">
           <div class="order-filter-form__field order-filter-form__field--search">
             <input
@@ -171,8 +174,8 @@ const hasActiveFilters = activeFilterCount > 0;
           <thead>
             <tr>
               <DashboardTableNumberHeader />
-              <th scope="col">Date Created</th>
-              <th scope="col">Applicant</th>
+              <AdminProductSortHeader column="created_at" label="Date Created" sortScope="reseller" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+              <AdminProductSortHeader column="name" label="Applicant" sortScope="reseller" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
               <th scope="col">Email</th>
               <th scope="col">Contact</th>
               <th scope="col">Supply Needs</th>
@@ -250,8 +253,8 @@ const hasActiveFilters = activeFilterCount > 0;
         <thead>
           <tr>
             <DashboardTableNumberHeader />
-            <th scope="col">Date Created</th>
-            <th scope="col">Applicant</th>
+            <AdminProductSortHeader column="created_at" label="Date Created" sortScope="reseller" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+            <AdminProductSortHeader column="name" label="Applicant" sortScope="reseller" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
             <th scope="col">Email</th>
             <th scope="col">Contact</th>
             <th scope="col">Supply Needs</th>
@@ -282,23 +285,35 @@ const hasActiveFilters = activeFilterCount > 0;
 </section>
 
 <script>
+  import { initAdminListSort } from "@/lib/client/admin-list-sort";
   import { initDashboardFilterPopovers } from "@/lib/client/dashboard-filter-popover";
   import { initDashboardFragmentTable } from "@/lib/client/dashboard-fragment-table";
   import { formatSidebarUnreadCount } from "@/lib/dashboard/sidebar-navigation";
+  import { isAdminResellerApplicationSortColumn, nextAdminResellerApplicationSort } from "@/lib/admin-dashboard/reseller-application-sort";
 
   function initAdminResellerFilters() {
     initDashboardFilterPopovers();
     initDashboardFragmentTable({
-      cacheKey: "admin-reseller-filter-cache-v2",
+      cacheKey: "admin-reseller-filter-cache-v3",
       fragmentPath: "/admin/reseller-applications-fragment",
       pagePath: "/admin/reseller-applications",
       formSelector: "[data-reseller-filter-form]",
       tableShellSelector: "[data-reseller-table-shell]",
       skeletonTemplateSelector: "[data-reseller-filter-skeleton]",
-      filterKeys: ["search", "status"],
+      filterKeys: ["search", "status", "sort", "direction"],
       searchInputSelector: "[data-reseller-search-input]",
       historyStateKey: "resellerFilterQuery",
       updatedEvents: ["dashboard:reseller-applications-table-updated"],
+    });
+    initAdminListSort({
+      buttonSelector: "[data-reseller-sort]",
+      pageSelector: "[data-admin-reseller-applications-page]",
+      formSelector: "[data-reseller-filter-form]",
+      sortInputSelector: "[data-reseller-sort-input]",
+      directionInputSelector: "[data-reseller-direction-input]",
+      readColumn: (button) => button.dataset.resellerSort,
+      isColumn: isAdminResellerApplicationSortColumn,
+      nextSort: nextAdminResellerApplicationSort,
     });
   }
   document.addEventListener("DOMContentLoaded", initAdminResellerFilters);

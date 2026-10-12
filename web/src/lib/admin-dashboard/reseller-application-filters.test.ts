@@ -27,4 +27,34 @@ describe("serializeAdminResellerApplicationFilters", () => {
       }),
     ).toBe("search=Ana&status=contacted");
   });
+
+  it("serializes a supported sort after the other filters", () => {
+    expect(
+      serializeAdminResellerApplicationFilters({
+        status: "submitted",
+        sort: "name",
+        direction: "asc",
+      }),
+    ).toBe("status=submitted&sort=name&direction=asc");
+  });
+});
+
+describe("reseller application sort filters", () => {
+  it("accepts reseller application columns and asc or desc", () => {
+    expect(
+      parseAdminResellerApplicationFilters(new URL("https://example.test/admin/reseller-applications?sort=created_at&direction=desc")),
+    ).toEqual({ sort: "created_at", direction: "desc" });
+    expect(
+      parseAdminResellerApplicationFilters(new URL("https://example.test/admin/reseller-applications?sort=name&direction=asc")),
+    ).toEqual({ sort: "name", direction: "asc" });
+  });
+
+  it("ignores an unknown column or direction", () => {
+    expect(
+      parseAdminResellerApplicationFilters(new URL("https://example.test/admin/reseller-applications?sort=email&direction=asc")),
+    ).toEqual({});
+    expect(
+      parseAdminResellerApplicationFilters(new URL("https://example.test/admin/reseller-applications?sort=name")),
+    ).toEqual({});
+  });
 });
