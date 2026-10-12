@@ -663,10 +663,12 @@ export type AdminDashboardDataOptions = {
   resellerApplicationLimit?: number;
 };
 
-export type AdminProductManagementData = Pick<
-  AdminDashboardData,
-  "products"
-> & {
+export type AdminProductListRecord = AdminProduct & {
+  referencedByOrder: boolean;
+};
+
+export type AdminProductManagementData = {
+  products: AdminProductListRecord[];
   pagination: AdminPaginatedResult<AdminProduct>["pagination"];
 };
 
@@ -847,11 +849,40 @@ export async function loadAdminProductManagementData(
   // server-side without loading the rest of the dashboard page payload.
   const supabase = createSupabaseAdminClient();
   const products = await loadPaginatedProducts(supabase, productFilters, pagination);
+  const referencedProductIds = await loadReferencedProductIds(
+    supabase,
+    products.records.map((product) => product.id),
+  );
 
   return {
-    products: products.records,
+    products: products.records.map((product) => ({
+      ...product,
+      referencedByOrder: referencedProductIds.has(product.id),
+    })),
     pagination: products.pagination,
   };
+}
+
+async function loadReferencedProductIds(
+  supabase: SupabaseAdminClient,
+  productIds: string[],
+) {
+  if (productIds.length === 0) {
+    return new Set<string>();
+  }
+
+  const { data, error } = await supabase
+    .from("order_item")
+    .select("product_id")
+    .in("product_id", productIds);
+
+  if (error) throwLoadError("Unable to load admin products.", error);
+
+  return new Set(
+    (data ?? [])
+      .map((row) => row.product_id)
+      .filter((productId): productId is string => typeof productId === "string"),
+  );
 }
 
 export async function loadAdminProductOptionData(): Promise<Pick<AdminDashboardData, "products">> {

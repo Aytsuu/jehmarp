@@ -81,7 +81,7 @@ import { loadCustomers, loadOrders } from "./data";
 import { getUnpaidOrderCheckNotificationIds } from "./unpaid-order-checks";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { PRODUCT_IMAGE_BUCKET, isManagedStoragePath } from "@/lib/supabase/storage";
+import { PRODUCT_IMAGE_BUCKET, isManagedStoragePath, toManagedStorageObjectPath } from "@/lib/supabase/storage";
 
 import {
   defaultProductCategories,
@@ -217,6 +217,10 @@ export type AdminAction =
         is_active: boolean;
         updated_at?: string;
       };
+    }
+  | {
+      type: "delete-products";
+      productIds: string[];
     }
   | {
       type: "save-customer";
@@ -815,6 +819,8 @@ export async function executeAdminAction(
     case "save-product":
       await executeProductSave(action);
       return;
+    case "delete-products":
+      return await executeProductDeletes(action);
     case "save-customer":
       return await executeCustomerSave(supabase, action, options);
     case "create-agent":
@@ -1317,6 +1323,11 @@ function parseAdminActionFormDataOrThrow(
         },
       });
     }
+    case "delete-products":
+      return success({
+        type: "delete-products",
+        productIds: requiredUuidList(formData, "productId", "Select at least one product."),
+      });
     case "save-customer": {
       const customerId = optionalUuid(formData, "customerId");
       return success({
@@ -1808,6 +1819,85 @@ async function executeProductSave(action: Extract<AdminAction, { type: "save-pro
 
     throw error;
   }
+}
+
+function productDeleteStatusMessage(deletedCount: number, skippedCount: number) {
+  if (skippedCount === 0) {
+    return deletedCount === 1 ? "Product deleted." : "Products deleted.";
+  }
+
+  const deletedLabel = deletedCount === 1
+    ? "Deleted 1 product."
+    : `Deleted ${deletedCount} products.`;
+
+  return `${deletedLabel} Products on an order were kept.`;
+}
+
+async function executeProductDeletes(
+  action: Extract<AdminAction, { type: "delete-products" }>,
+): Promise<AdminActionResult> {
+  const adminClient = createSupabaseAdminClient();
+  const { data: referencedRows, error: referencedError } = await adminClient
+    .from("order_item")
+    .select("product_id")
+    .in("product_id", action.productIds);
+
+  if (referencedError) {
+    throw new Error("Unable to delete products.");
+  }
+
+  const referencedIds = new Set(
+    (referencedRows ?? [])
+      .map((row) => row.product_id)
+      .filter((productId): productId is string => typeof productId === "string"),
+  );
+  const deletableIds = action.productIds.filter((productId) => !referencedIds.has(productId));
+
+  if (deletableIds.length === 0) {
+    throw new Error("Products on an order cannot be deleted.");
+  }
+
+  const { data: products, error: productError } = await adminClient
+    .from("product")
+    .select("id, image_path")
+    .in("id", deletableIds);
+
+  if (productError) {
+    throw new Error("Unable to delete products.");
+  }
+
+  const { error: deleteError } = await adminClient
+    .from("product")
+    .delete()
+    .in("id", deletableIds);
+
+  if (deleteError) {
+    throw new Error("Unable to delete products.");
+  }
+
+  let imageCleanupFailed = false;
+  for (const product of products ?? []) {
+    if (typeof product.image_path !== "string") {
+      continue;
+    }
+
+    try {
+      await removeProductImage(adminClient, product.image_path);
+    } catch {
+      imageCleanupFailed = true;
+    }
+  }
+
+  if (imageCleanupFailed) {
+    throw new Error("Unable to delete the product image.");
+  }
+
+  return {
+    statusMessage: productDeleteStatusMessage(
+      deletableIds.length,
+      action.productIds.length - deletableIds.length,
+    ),
+  };
 }
 
 async function executeOrderCreate(
@@ -4170,11 +4260,15 @@ async function removeProductImage(
   supabase: SupabaseAdminClient,
   imagePath: string,
 ) {
-  if (!isManagedStoragePath(imagePath, PRODUCT_IMAGE_BUCKET)) {
+  const objectPath = toManagedStorageObjectPath(imagePath, PRODUCT_IMAGE_BUCKET);
+  if (!objectPath) {
     return;
   }
 
-  await supabase.storage.from(PRODUCT_IMAGE_BUCKET).remove([imagePath]);
+  const { error } = await supabase.storage.from(PRODUCT_IMAGE_BUCKET).remove([objectPath]);
+  if (error) {
+    throw new Error("Unable to delete the product image.");
+  }
 }
 
 function success(action: AdminAction): ParseSuccess {
@@ -4624,6 +4718,8 @@ function getActionSuccessMessage(action: AdminAction) {
       return "Page section saved.";
     case "save-product":
       return "Product saved.";
+    case "delete-products":
+      return "Products deleted.";
     case "save-customer":
       return "Customer saved.";
     case "create-agent":

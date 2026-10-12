@@ -39,7 +39,8 @@ const {
   id,
 } = Astro.props;
 
-const isLabelTrigger = Boolean(triggerLabel);
+const hasTriggerSlot = Astro.slots.has("trigger");
+const isLabelTrigger = Boolean(triggerLabel) || hasTriggerSlot;
 const triggerClasses = [
   "table-action-menu__trigger",
   isLabelTrigger && "table-action-menu__trigger--button",
@@ -63,7 +64,9 @@ const rootClasses = ["table-action-menu", menuClass].filter(Boolean).join(" ");
     disabled={disabled || undefined}
   >
     {
-      isLabelTrigger ? (
+      hasTriggerSlot ? (
+        <slot name="trigger" />
+      ) : isLabelTrigger ? (
         <span>{triggerLabel}</span>
       ) : (
         <ActionMenuGlyph glyph={triggerIcon} />

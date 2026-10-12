@@ -4,8 +4,7 @@ import DashboardTableEmptyState from "@/components/dashboard/DashboardTableEmpty
 import DashboardTableNumberHeader from "@/components/dashboard/DashboardTableNumberHeader.astro";
 import DashboardTablePagination from "@/components/dashboard/DashboardTablePagination.astro";
 import StatusBadge from "@/components/dashboard/StatusBadge.astro";
-import Button from "@/components/ui/Button.astro";
-import Modal from "@/components/ui/Modal.astro";
+import AlertDialog from "@/components/ui/AlertDialog.astro";
 import Popover from "@/components/ui/Popover.astro";
 import Sheet from "@/components/ui/Sheet.astro";
 import type { AdminProductManagementData } from "@/lib/admin-dashboard/data";
@@ -46,6 +45,10 @@ function formatStockStatus(status: string): string {
   if (status === "low_stock") return "Low Stock";
   return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
+
+const activeFilterCount =
+  (activeFilters.stockStatus ? 1 : 0) + (activeFilters.category ? 1 : 0);
+const hasActiveFilters = activeFilterCount > 0;
 ---
 
 <section
@@ -309,7 +312,7 @@ function formatStockStatus(status: string): string {
         id="product-filter-form"
         method="get"
         action="/admin/products"
-        class="product-filter-form product-filter-form--triple"
+        class="product-filter-form"
         data-product-filter-form
         data-current-filter-query={filterQuery}
         aria-label="Filter products"
@@ -328,15 +331,24 @@ function formatStockStatus(status: string): string {
               data-product-search-input
             />
           </div>
-          <div class="product-filter-form__toolbar-actions">
+          <div
+            class="product-filter-popover-container"
+            data-product-filter-popover-container
+          >
             <button
               type="button"
-              class="product-filter-form__icon-trigger"
-              data-product-filter-modal-trigger
-              data-open-dashboard-modal="product-filters-modal"
-              aria-label="Open product filters"
-              aria-pressed="false"
-              aria-controls="product-filters-modal"
+              class:list={[
+                "product-filter-form__icon-trigger",
+                "product-filter-popover-trigger",
+                { "is-active": hasActiveFilters },
+              ]}
+              data-product-filter-popover-trigger
+              aria-label="Filter products"
+              aria-haspopup="dialog"
+              aria-expanded="false"
+              aria-controls="product-filters-popover"
+              aria-pressed={hasActiveFilters ? "true" : "false"}
+              title="Filter products"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -352,83 +364,163 @@ function formatStockStatus(status: string): string {
               >
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
               </svg>
-            </button>
-            <button
-              type="button"
-              class="product-filter-form__icon-trigger product-filter-form__create-trigger"
-              data-open-create-sheet
-              data-sheet-target="#create-product-sheet"
-              aria-label="Create product"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
+              <span
+                class="product-filter-popover-trigger__badge"
+                data-product-filter-badge
+                hidden={!hasActiveFilters}
               >
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
+                {hasActiveFilters ? activeFilterCount : ""}
+              </span>
             </button>
-          </div>
-        </div>
-        <div class="product-filter-form__advanced-filters">
-          <div class="product-filter-form__field">
-            <select
-              name="stockStatus"
-              data-product-filter-field="stockStatus"
-              aria-label="Filter by stock status"
+
+            <div
+              id="product-filters-popover"
+              class="product-filter-popover"
+              data-product-filter-popover
+              role="dialog"
+              aria-label="Filter products"
+              hidden
             >
-              <option value="">All statuses</option>
-              {
-                stockStatuses.map((status) => (
-                  <option
-                    value={status}
-                    selected={activeFilters.stockStatus === status}
+              <header class="product-filter-popover__header">
+                <div class="product-filter-popover__heading">
+                  <h3 class="product-filter-popover__title">Filter products</h3>
+                  <p class="product-filter-popover__description">
+                    Narrow products by status and category.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  class="product-filter-popover__close"
+                  data-product-filter-popover-close
+                  aria-label="Close filters"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.25"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
                   >
-                    {formatStockStatus(status)}
-                  </option>
-                ))
-              }
-            </select>
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </header>
+
+              <div class="product-filter-popover__body">
+                <label class="product-filter-popover__field">
+                  <span class="product-filter-popover__label">Stock status</span>
+                  <select
+                    name="stockStatus"
+                    data-product-filter-field="stockStatus"
+                    aria-label="Filter by stock status"
+                  >
+                    <option value="">All statuses</option>
+                    {
+                      stockStatuses.map((status) => (
+                        <option
+                          value={status}
+                          selected={activeFilters.stockStatus === status}
+                        >
+                          {formatStockStatus(status)}
+                        </option>
+                      ))
+                    }
+                  </select>
+                </label>
+
+                <label class="product-filter-popover__field">
+                  <span class="product-filter-popover__label">Category</span>
+                  <select
+                    name="category"
+                    data-product-filter-field="category"
+                    aria-label="Filter by category"
+                  >
+                    <option value="">All categories</option>
+                    {
+                      productCategories.map((category) => (
+                        <option
+                          value={category}
+                          selected={activeFilters.category === category}
+                        >
+                          {category}
+                        </option>
+                      ))
+                    }
+                  </select>
+                </label>
+              </div>
+
+              <footer class="product-filter-popover__footer">
+                <button
+                  type="button"
+                  class="product-filter-popover__clear"
+                  data-product-filter-popover-clear
+                >
+                  Clear
+                </button>
+              </footer>
+            </div>
           </div>
-          <div class="product-filter-form__field">
-            <select
-              name="category"
-              data-product-filter-field="category"
-              aria-label="Filter by category"
+          <button
+            type="button"
+            class="product-selection-delete"
+            data-product-delete-selected
+            data-open-alert-dialog="delete-products-dialog"
+            data-alert-dialog-form="delete-products-form"
+            hidden
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
             >
-              <option value="">All categories</option>
-              {
-                productCategories.map((category) => (
-                  <option
-                    value={category}
-                    selected={activeFilters.category === category}
-                  >
-                    {category}
-                  </option>
-                ))
-              }
-            </select>
-          </div>
+              <path d="M3 6h18"></path>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+            <span class="product-selection-delete__text">Delete selected product(s)</span>
+          </button>
+          <button
+            type="button"
+            class="product-management-toolbar__create"
+            data-open-create-sheet
+            data-sheet-target="#create-product-sheet"
+            aria-label="Create product"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span class="product-management-toolbar__create-text">Create Product</span>
+          </button>
         </div>
       </form>
-      <div class="product-management-toolbar__actions">
-        <Button
-          type="button"
-          class="product-management-toolbar__create"
-          data-open-create-sheet
-          data-sheet-target="#create-product-sheet"
-        >
-          Create Product
-        </Button>
-      </div>
     </div>
 
     <div data-product-table-shell class="dashboard-interactive-table__surface">
@@ -437,6 +529,12 @@ function formatStockStatus(status: string): string {
           <thead>
             <tr>
               <DashboardTableNumberHeader />
+              <th scope="col" class="dashboard-table__select-column">
+                <label class="dashboard-table__select-all">
+                  <span class="sr-only">Select all products on this page</span>
+                  <input type="checkbox" data-product-select-all />
+                </label>
+              </th>
               <th scope="col">Date Created</th>
               <th scope="col" class="dashboard-table__cell--product">
                 Product
@@ -451,13 +549,25 @@ function formatStockStatus(status: string): string {
             {
               data.products.length === 0 ? (
                 <DashboardTableEmptyState
-                  colspan={7}
+                  colspan={8}
                   message="No products match the selected filters."
                 />
               ) : (
                 data.products.map((product, index) => (
                   <tr data-status={product.is_active ? "active" : "inactive"}>
                     <td class="dashboard-table__number-column">{dashboardTableRowNumber(data.pagination, index)}</td>
+                    <td class="dashboard-table__select-column">
+                      <label class="dashboard-table__row-select">
+                        <span class="sr-only">Select {productDisplayLabel(product)}</span>
+                        <input
+                          type="checkbox"
+                          value={product.id}
+                          data-product-row-checkbox
+                          data-product-name={productDisplayLabel(product)}
+                          data-product-referenced={product.referencedByOrder ? "true" : undefined}
+                        />
+                      </label>
+                    </td>
                     <td>{formatDate(product.created_at)}</td>
 
                     {/* Product Cell (Editable Product Popover) */}
@@ -1097,68 +1207,6 @@ function formatStockStatus(status: string): string {
     <DashboardTablePagination pagination={data.pagination} />
   </div>
 
-  <Modal
-    id="product-filters-modal"
-    title="Filter products"
-    description="Narrow products by status and category."
-  >
-    <div class="product-filter-modal">
-      <label class="product-filter-modal__field">
-        <span class="product-filter-modal__label">Stock status</span>
-        <select
-          data-product-filter-field="stockStatus"
-          aria-label="Filter by stock status"
-        >
-          <option value="">All statuses</option>
-          {
-            stockStatuses.map((status) => (
-              <option
-                value={status}
-                selected={activeFilters.stockStatus === status}
-              >
-                {formatStockStatus(status)}
-              </option>
-            ))
-          }
-        </select>
-      </label>
-      <label class="product-filter-modal__field">
-        <span class="product-filter-modal__label">Category</span>
-        <select
-          data-product-filter-field="category"
-          aria-label="Filter by category"
-        >
-          <option value="">All categories</option>
-          {
-            productCategories.map((category) => (
-              <option
-                value={category}
-                selected={activeFilters.category === category}
-              >
-                {category}
-              </option>
-            ))
-          }
-        </select>
-      </label>
-      <div class="product-filter-modal__actions">
-        <button
-          type="button"
-          class="product-filter-modal__clear"
-          data-product-filter-modal-clear
-        >
-          Clear
-        </button>
-        <button
-          type="button"
-          class="product-filter-modal__apply"
-          data-product-filter-modal-apply
-        >
-          Apply filters
-        </button>
-      </div>
-    </div>
-  </Modal>
 
   <template data-product-filter-skeleton>
     <DashboardTableBoard aria-busy="true" aria-live="polite">
@@ -1169,6 +1217,9 @@ function formatStockStatus(status: string): string {
         <thead>
           <tr>
             <DashboardTableNumberHeader />
+            <th scope="col" class="dashboard-table__select-column">
+              <span class="table-skeleton-block table-skeleton-block--short"></span>
+            </th>
             <th scope="col">Date Created</th>
             <th scope="col" class="dashboard-table__cell--product">
               Product
@@ -1184,6 +1235,9 @@ function formatStockStatus(status: string): string {
             skeletonRows.map(() => (
               <tr>
                 <td>
+                  <span class="table-skeleton-block table-skeleton-block--short" />
+                </td>
+                <td class="dashboard-table__select-column">
                   <span class="table-skeleton-block table-skeleton-block--short" />
                 </td>
                 <td>
@@ -1214,14 +1268,30 @@ function formatStockStatus(status: string): string {
       </table>
     </DashboardTableBoard>
   </template>
+
+  <form id="delete-products-form" method="post" data-astro-reload hidden>
+    <input type="hidden" name="action" value="delete-products" />
+    <div data-product-delete-id-fields></div>
+    <button type="submit" hidden>Delete selected products</button>
+  </form>
+  <AlertDialog
+    id="delete-products-dialog"
+    title="Delete selected products?"
+    description="Delete the selected products? This cannot be undone."
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    variant="danger"
+  />
 </section>
 
 <script>
+  import { initAdminProductSelection } from "@/lib/client/admin-product-selection";
   import { initDashboardFragmentTable } from "@/lib/client/dashboard-fragment-table";
-  import { initProductFilterModal } from "@/lib/client/product-filter-modal";
+  import { initProductFilterPopover } from "@/lib/client/product-filter-popover";
 
   function initAdminProductFilters() {
-    initProductFilterModal();
+    initAdminProductSelection();
+    initProductFilterPopover();
     initDashboardFragmentTable({
       cacheKey: "admin-products-filter-cache-v2",
       fragmentPath: "/admin/products-fragment",
@@ -1237,6 +1307,7 @@ function formatStockStatus(status: string): string {
 
   document.addEventListener("DOMContentLoaded", initAdminProductFilters);
   document.addEventListener("astro:after-swap", initAdminProductFilters);
+  document.addEventListener("astro:page-load", initAdminProductFilters);
   if (
     document.readyState === "complete" ||
     document.readyState === "interactive"

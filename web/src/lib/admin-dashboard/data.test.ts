@@ -152,6 +152,36 @@ describe("loadAdminDashboardData", () => {
     });
   });
 
+  it("marks products that are already on an order", async () => {
+    const productId = "4f65578f-3f1f-4216-9fc2-013ef06661d1";
+    const productBuilder = createQueryBuilder({
+      data: [{ id: productId, name: "Pork Belly" }],
+      error: null,
+      count: 1,
+    });
+    const orderItemBuilder = createQueryBuilder({
+      data: [{ product_id: productId }],
+      error: null,
+    });
+    const from = vi.fn((table: string) => (
+      table === "order_item" ? orderItemBuilder : productBuilder
+    ));
+    createSupabaseAdminClient.mockReturnValue({ from });
+    const { loadAdminProductManagementData } = await import("./data");
+
+    const result = await loadAdminProductManagementData();
+
+    expect(from).toHaveBeenCalledWith("order_item");
+    expect(orderItemBuilder.in).toHaveBeenCalledWith("product_id", [productId]);
+    expect(result.products).toEqual([
+      {
+        id: productId,
+        name: "Pork Belly",
+        referencedByOrder: true,
+      },
+    ]);
+  });
+
   it("applies direct admin order filters to the database query", async () => {
     const orderBuilder = createQueryBuilder();
     const from = vi.fn((table: string) => (
