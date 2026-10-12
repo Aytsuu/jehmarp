@@ -33,7 +33,7 @@ export function optionalAdminListSort<T extends string>(
   isColumn: (value: string | null | undefined) => value is T,
   sort: string | null,
   direction: string | null,
-) {
+): { sort: T; direction: AdminListSortDirection } | Record<string, never> {
   const normalizedSort = sort?.trim();
   const normalizedDirection = direction?.trim();
   if (!isColumn(normalizedSort)) return {};
@@ -41,6 +41,6 @@ export function optionalAdminListSort<T extends string>(
 
   return {
     sort: normalizedSort,
-    direction: normalizedDirection,
-  };
+    direction: normalizedDirection === "asc" ? "asc" : "desc",
+  } satisfies { sort: T; direction: AdminListSortDirection };
 }
