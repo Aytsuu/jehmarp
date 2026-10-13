@@ -22,6 +22,7 @@ import type { AdminCustomerFilters } from "./customer-filters";
 import type { AdminInvoiceFilters } from "./invoice-filters";
 import type { AdminInquiryFilters } from "./inquiry-filters";
 import type { AdminOrderFilters } from "./order-filters";
+import type { AdminSalesFilters } from "./sales-filters";
 import {
   adminPaginationRange,
   buildAdminPagination,
@@ -663,10 +664,12 @@ export type AdminDashboardDataOptions = {
   resellerApplicationLimit?: number;
 };
 
-export type AdminProductManagementData = Pick<
-  AdminDashboardData,
-  "products"
-> & {
+export type AdminProductListRecord = AdminProduct & {
+  referencedByOrder: boolean;
+};
+
+export type AdminProductManagementData = {
+  products: AdminProductListRecord[];
   pagination: AdminPaginatedResult<AdminProduct>["pagination"];
 };
 
@@ -847,11 +850,40 @@ export async function loadAdminProductManagementData(
   // server-side without loading the rest of the dashboard page payload.
   const supabase = createSupabaseAdminClient();
   const products = await loadPaginatedProducts(supabase, productFilters, pagination);
+  const referencedProductIds = await loadReferencedProductIds(
+    supabase,
+    products.records.map((product) => product.id),
+  );
 
   return {
-    products: products.records,
+    products: products.records.map((product) => ({
+      ...product,
+      referencedByOrder: referencedProductIds.has(product.id),
+    })),
     pagination: products.pagination,
   };
+}
+
+async function loadReferencedProductIds(
+  supabase: SupabaseAdminClient,
+  productIds: string[],
+) {
+  if (productIds.length === 0) {
+    return new Set<string>();
+  }
+
+  const { data, error } = await supabase
+    .from("order_item")
+    .select("product_id")
+    .in("product_id", productIds);
+
+  if (error) throwLoadError("Unable to load admin products.", error);
+
+  return new Set(
+    (data ?? [])
+      .map((row) => row.product_id)
+      .filter((productId): productId is string => typeof productId === "string"),
+  );
 }
 
 export async function loadAdminProductOptionData(): Promise<Pick<AdminDashboardData, "products">> {
@@ -876,7 +908,7 @@ export async function loadAdminInvoiceManagementData(
 }
 
 export async function loadAdminSalesManagementData(
-  salesFilters: AdminOrderFilters = {},
+  salesFilters: AdminSalesFilters = {},
   pagination: AdminPaginationParams = defaultAdminPagination,
 ): Promise<AdminSalesManagementData> {
   const supabase = createSupabaseAdminClient();
@@ -1228,10 +1260,14 @@ async function loadPaginatedProducts(
   }
 
   const { from, to } = adminPaginationRange(pagination);
-  const { data, error, count } = await query
-    .order("is_active", { ascending: false })
-    .order("name", { ascending: true })
-    .range(from, to);
+  const orderedQuery = filters.sort && filters.direction
+    ? query
+      .order(filters.sort, { ascending: filters.direction === "asc" })
+      .order("id", { ascending: true })
+    : query
+      .order("is_active", { ascending: false })
+      .order("name", { ascending: true });
+  const { data, error, count } = await orderedQuery.range(from, to);
 
   if (error) throwLoadError("Unable to load admin products.", error);
 
@@ -1274,6 +1310,8 @@ async function loadPaginatedAdminOrderRows(
     payment_status_filter: filters.paymentStatus ?? null,
     page_number: pagination.page,
     page_size: pagination.pageSize,
+    sort_column: filters.sort ?? null,
+    sort_direction: filters.direction ?? null,
   });
 
   if (error) throwLoadError("Unable to load admin order rows.", error);
@@ -1314,6 +1352,8 @@ async function loadPaginatedAdminInvoiceRows(
     balance_status_filter: filters.balanceStatus ?? null,
     page_number: pagination.page,
     page_size: pagination.pageSize,
+    sort_column: filters.sort ?? null,
+    sort_direction: filters.direction ?? null,
   });
 
   if (error) throwLoadError("Unable to load admin invoice rows.", error);
@@ -1333,7 +1373,7 @@ async function loadPaginatedAdminInvoiceRows(
 
 async function loadPaginatedAdminSalesRows(
   supabase: SupabaseAdminClient,
-  filters: AdminOrderFilters,
+  filters: AdminSalesFilters,
   pagination: AdminPaginationParams,
 ): Promise<AdminPaginatedResult<AdminSalesTableRow>> {
   const { data, error } = await supabase.rpc("list_admin_sales_rows", {
@@ -1343,6 +1383,8 @@ async function loadPaginatedAdminSalesRows(
     payment_status_filter: filters.paymentStatus ?? null,
     page_number: pagination.page,
     page_size: pagination.pageSize,
+    sort_column: filters.sort ?? null,
+    sort_direction: filters.direction ?? null,
   });
 
   if (error) throwLoadError("Unable to load admin sales rows.", error);
@@ -1375,6 +1417,8 @@ async function loadPaginatedAdminCustomerRows(
     customer_type_filter: filters.customerType ?? null,
     page_number: pagination.page,
     page_size: pagination.pageSize,
+    sort_column: filters.sort ?? null,
+    sort_direction: filters.direction ?? null,
   });
 
   if (error) throwLoadError("Unable to load admin customer rows.", error);
@@ -1436,6 +1480,8 @@ async function loadPaginatedAgents(
     status_filter: filters.status ?? null,
     page_number: pagination.page,
     page_size: pagination.pageSize,
+    sort_column: filters.sort ?? null,
+    sort_direction: filters.direction ?? null,
   });
 
   if (error) throwLoadError("Unable to load admin agents.", error);
@@ -2284,9 +2330,12 @@ async function loadPaginatedContactInquiries(
   }
 
   const { from, to } = adminPaginationRange(pagination);
-  const { data, error, count } = await query
-    .order("created_at", { ascending: false })
-    .range(from, to);
+  const orderedQuery = filters.sort && filters.direction
+    ? query
+      .order(filters.sort, { ascending: filters.direction === "asc" })
+      .order("id", { ascending: filters.direction === "asc" })
+    : query.order("created_at", { ascending: false });
+  const { data, error, count } = await orderedQuery.range(from, to);
 
   if (error) throwLoadError("Unable to load admin contact inquiries.", error);
 
@@ -2356,9 +2405,12 @@ async function loadPaginatedResellerApplications(
   }
 
   const { from, to } = adminPaginationRange(pagination);
-  const { data, error, count } = await query
-    .order("created_at", { ascending: false })
-    .range(from, to);
+  const orderedQuery = filters.sort && filters.direction
+    ? query
+      .order(filters.sort, { ascending: filters.direction === "asc" })
+      .order("id", { ascending: filters.direction === "asc" })
+    : query.order("created_at", { ascending: false });
+  const { data, error, count } = await orderedQuery.range(from, to);
 
   if (error) throwLoadError("Unable to load admin reseller applications.", error);
 

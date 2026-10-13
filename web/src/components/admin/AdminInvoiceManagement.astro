@@ -1,12 +1,12 @@
 ---
 import DashboardTableActionsHeader from "@/components/dashboard/DashboardTableActionsHeader.astro";
+import AdminProductSortHeader from "@/components/admin/AdminProductSortHeader.astro";
 import DashboardTableBoard from "@/components/dashboard/DashboardTableBoard.astro";
 import DashboardTableEmptyState from "@/components/dashboard/DashboardTableEmptyState.astro";
 import DashboardTableNumberHeader from "@/components/dashboard/DashboardTableNumberHeader.astro";
 import DashboardTablePagination from "@/components/dashboard/DashboardTablePagination.astro";
 import TableActionMenu from "@/components/TableActionMenu.astro";
 import TableRowActionsModal from "@/components/TableRowActionsModal.astro";
-import Modal from "@/components/ui/Modal.astro";
 import type { AdminInvoiceManagementData } from "@/lib/admin-dashboard/data";
 import type { AdminInvoiceFilters } from "@/lib/admin-dashboard/invoice-filters";
 import { invoiceBalanceStatuses } from "@/lib/admin-dashboard/invoice-filters";
@@ -21,6 +21,8 @@ type Props = {
 
 const { data, activeFilters, filterQuery } = Astro.props;
 const skeletonRows = Array.from({ length: 6 });
+const activeFilterCount = Number(Boolean(activeFilters.balanceStatus));
+const hasActiveFilters = activeFilterCount > 0;
 
 function formatBalanceStatus(status: (typeof invoiceBalanceStatuses)[number]) {
   if (status === "partial") return "Partial payment";
@@ -39,11 +41,13 @@ function formatBalanceStatus(status: (typeof invoiceBalanceStatuses)[number]) {
       <form
         method="get"
         action="/admin/invoices"
-        class="order-filter-form order-filter-form--paired"
+        class="order-filter-form"
         data-invoice-filter-form
         data-current-filter-query={filterQuery}
         aria-label="Filter invoices"
       >
+        <input type="hidden" name="sort" value={activeFilters.sort ?? ""} data-invoice-sort-input />
+        <input type="hidden" name="direction" value={activeFilters.direction ?? ""} data-invoice-direction-input />
         <div class="product-filter-form__search-row">
           <div class="order-filter-form__field order-filter-form__field--search">
             <input
@@ -56,20 +60,23 @@ function formatBalanceStatus(status: (typeof invoiceBalanceStatuses)[number]) {
               data-invoice-search-input
             />
           </div>
-          <div class="product-filter-form__toolbar-actions">
+
+          <div
+            class="product-filter-popover-container"
+            data-invoice-filter-popover-root
+          >
             <button
               type="button"
-              class="product-filter-form__icon-trigger"
-              data-invoice-filter-modal-trigger
-              data-open-dashboard-modal="invoice-filters-modal"
-              aria-label="Open invoice filters"
-              aria-pressed="false"
-              aria-controls="invoice-filters-modal"
+              class="product-filter-form__icon-trigger product-filter-popover-trigger"
+              data-invoice-filter-popover-trigger
+              aria-label="Filter invoices"
+              aria-expanded="false"
+              aria-haspopup="dialog"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -80,23 +87,86 @@ function formatBalanceStatus(status: (typeof invoiceBalanceStatuses)[number]) {
               >
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
               </svg>
+              <span
+                class="product-filter-popover-trigger__badge"
+                data-invoice-filter-popover-badge
+                hidden={!hasActiveFilters}
+              >
+                {activeFilterCount}
+              </span>
             </button>
-          </div>
-        </div>
-        <div class="product-filter-form__advanced-filters">
-          <div class="order-filter-form__field">
-            <select
-              name="balanceStatus"
-              data-invoice-filter-field="balanceStatus"
-              aria-label="Filter by balance status"
+
+            <div
+              class="product-filter-popover"
+              data-invoice-filter-popover
+              role="dialog"
+              aria-label="Filter invoices"
+              hidden
             >
-              <option value="">All balances</option>
-              {invoiceBalanceStatuses.map((status) => (
-                <option value={status} selected={activeFilters.balanceStatus === status}>
-                  {formatBalanceStatus(status)}
-                </option>
-              ))}
-            </select>
+              <header class="product-filter-popover__header">
+                <div class="product-filter-popover__heading">
+                  <h3 class="product-filter-popover__title">Filter invoices</h3>
+                  <p class="product-filter-popover__description">
+                    Narrow invoices by balance status.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  class="product-filter-popover__close"
+                  data-invoice-filter-popover-close
+                  aria-label="Close filters"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.25"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </header>
+
+              <div class="product-filter-popover__body">
+                <label class="product-filter-popover__field">
+                  <span class="product-filter-popover__label">Balance status</span>
+                  <select
+                    name="balanceStatus"
+                    data-invoice-filter-field="balanceStatus"
+                    aria-label="Filter by balance status"
+                  >
+                    <option value="">All balances</option>
+                    {
+                      invoiceBalanceStatuses.map((status) => (
+                        <option
+                          value={status}
+                          selected={activeFilters.balanceStatus === status}
+                        >
+                          {formatBalanceStatus(status)}
+                        </option>
+                      ))
+                    }
+                  </select>
+                </label>
+              </div>
+
+              <footer class="product-filter-popover__footer">
+                <button
+                  type="button"
+                  class="product-filter-popover__clear"
+                  data-invoice-filter-popover-clear
+                >
+                  Clear
+                </button>
+              </footer>
+            </div>
           </div>
         </div>
       </form>
@@ -108,12 +178,12 @@ function formatBalanceStatus(status: (typeof invoiceBalanceStatuses)[number]) {
           <thead>
             <tr>
               <DashboardTableNumberHeader />
-              <th scope="col">Date Created</th>
+              <AdminProductSortHeader column="invoice_created_at" label="Date Created" sortScope="invoice" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
               <th scope="col">Invoice Number</th>
-              <th scope="col">Customer</th>
-              <th scope="col">Invoice Total</th>
-              <th scope="col">Paid</th>
-              <th scope="col">Balance</th>
+              <AdminProductSortHeader column="customer_label" label="Customer" sortScope="invoice" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+              <AdminProductSortHeader column="invoice_total" label="Invoice Total" sortScope="invoice" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+              <AdminProductSortHeader column="paid_total" label="Paid" sortScope="invoice" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+              <AdminProductSortHeader column="balance" label="Balance" sortScope="invoice" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
               <DashboardTableActionsHeader />
             </tr>
           </thead>
@@ -166,12 +236,12 @@ function formatBalanceStatus(status: (typeof invoiceBalanceStatuses)[number]) {
         <thead>
           <tr>
             <DashboardTableNumberHeader />
-            <th scope="col">Date Created</th>
+            <AdminProductSortHeader column="invoice_created_at" label="Date Created" sortScope="invoice" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
             <th scope="col">Invoice Number</th>
-            <th scope="col">Customer</th>
-            <th scope="col">Invoice Total</th>
-            <th scope="col">Paid</th>
-            <th scope="col">Balance</th>
+            <AdminProductSortHeader column="customer_label" label="Customer" sortScope="invoice" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+            <AdminProductSortHeader column="invoice_total" label="Invoice Total" sortScope="invoice" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+            <AdminProductSortHeader column="paid_total" label="Paid" sortScope="invoice" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+            <AdminProductSortHeader column="balance" label="Balance" sortScope="invoice" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
             <DashboardTableActionsHeader />
           </tr>
         </thead>
@@ -199,51 +269,36 @@ function formatBalanceStatus(status: (typeof invoiceBalanceStatuses)[number]) {
     description="Choose an action for this invoice."
   />
 
-  <Modal
-    id="invoice-filters-modal"
-    title="Filter invoices"
-    description="Narrow invoices by balance status."
-  >
-    <div class="product-filter-modal">
-      <label class="product-filter-modal__field">
-        <span class="product-filter-modal__label">Balance status</span>
-        <select data-invoice-filter-field="balanceStatus" aria-label="Filter by balance status">
-          <option value="">All balances</option>
-          {invoiceBalanceStatuses.map((status) => (
-            <option value={status} selected={activeFilters.balanceStatus === status}>
-              {formatBalanceStatus(status)}
-            </option>
-          ))}
-        </select>
-      </label>
-      <div class="product-filter-modal__actions">
-        <button type="button" class="product-filter-modal__clear" data-invoice-filter-modal-clear>
-          Clear
-        </button>
-        <button type="button" class="product-filter-modal__apply" data-invoice-filter-modal-apply>
-          Apply filters
-        </button>
-      </div>
-    </div>
-  </Modal>
 </section>
 
 <script>
-  import { initDashboardFilterModals } from "@/lib/client/dashboard-filter-modal";
+  import { initAdminListSort } from "@/lib/client/admin-list-sort";
+  import { initDashboardFilterPopovers } from "@/lib/client/dashboard-filter-popover";
   import { initDashboardFragmentTable } from "@/lib/client/dashboard-fragment-table";
+  import { isAdminInvoiceSortColumn, nextAdminInvoiceSort } from "@/lib/admin-dashboard/invoice-sort";
 
   function initAdminInvoiceFilters() {
-    initDashboardFilterModals();
+    initDashboardFilterPopovers();
     initDashboardFragmentTable({
-      cacheKey: "admin-invoices-filter-cache-v2",
+      cacheKey: "admin-invoices-filter-cache-v3",
       fragmentPath: "/admin/invoices-fragment",
       pagePath: "/admin/invoices",
       formSelector: "[data-invoice-filter-form]",
       tableShellSelector: "[data-invoice-table-shell]",
       skeletonTemplateSelector: "[data-invoice-filter-skeleton]",
-      filterKeys: ["search", "balanceStatus"],
+      filterKeys: ["search", "balanceStatus", "sort", "direction"],
       searchInputSelector: "[data-invoice-search-input]",
       historyStateKey: "invoiceFilterQuery",
+    });
+    initAdminListSort({
+      buttonSelector: "[data-invoice-sort]",
+      pageSelector: "[data-admin-invoices-page]",
+      formSelector: "[data-invoice-filter-form]",
+      sortInputSelector: "[data-invoice-sort-input]",
+      directionInputSelector: "[data-invoice-direction-input]",
+      readColumn: (button) => button.dataset.invoiceSort,
+      isColumn: isAdminInvoiceSortColumn,
+      nextSort: nextAdminInvoiceSort,
     });
   }
 

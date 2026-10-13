@@ -1,10 +1,10 @@
 ---
 import DashboardTableBoard from "@/components/dashboard/DashboardTableBoard.astro";
+import AdminProductSortHeader from "@/components/admin/AdminProductSortHeader.astro";
 import DashboardTableEmptyState from "@/components/dashboard/DashboardTableEmptyState.astro";
 import DashboardTableNumberHeader from "@/components/dashboard/DashboardTableNumberHeader.astro";
 import DashboardTablePagination from "@/components/dashboard/DashboardTablePagination.astro";
 import StatusBadge from "@/components/dashboard/StatusBadge.astro";
-import Modal from "@/components/ui/Modal.astro";
 import Popover from "@/components/ui/Popover.astro";
 import type { AdminInquiryManagementData } from "@/lib/admin-dashboard/data";
 import type { AdminInquiryFilters } from "@/lib/admin-dashboard/inquiry-filters";
@@ -21,6 +21,8 @@ type Props = {
 
 const { data, inquiryStatuses, activeFilters, filterQuery } = Astro.props;
 const skeletonRows = Array.from({ length: 6 });
+const activeFilterCount = Number(Boolean(activeFilters.status));
+const hasActiveFilters = activeFilterCount > 0;
 ---
 
 <section
@@ -34,11 +36,13 @@ const skeletonRows = Array.from({ length: 6 });
       <form
         method="get"
         action="/admin/inquiries"
-        class="order-filter-form order-filter-form--paired"
+        class="order-filter-form"
         data-inquiry-filter-form
         data-current-filter-query={filterQuery}
         aria-label="Filter inquiries"
       >
+        <input type="hidden" name="sort" value={activeFilters.sort ?? ""} data-inquiry-sort-input />
+        <input type="hidden" name="direction" value={activeFilters.direction ?? ""} data-inquiry-direction-input />
         <div class="product-filter-form__search-row">
           <div class="order-filter-form__field order-filter-form__field--search">
             <input
@@ -51,20 +55,23 @@ const skeletonRows = Array.from({ length: 6 });
               data-inquiry-search-input
             />
           </div>
-          <div class="product-filter-form__toolbar-actions">
+
+          <div
+            class="product-filter-popover-container"
+            data-inquiry-filter-popover-root
+          >
             <button
               type="button"
-              class="product-filter-form__icon-trigger"
-              data-inquiry-filter-modal-trigger
-              data-open-dashboard-modal="inquiry-filters-modal"
-              aria-label="Open inquiry filters"
-              aria-pressed="false"
-              aria-controls="inquiry-filters-modal"
+              class="product-filter-form__icon-trigger product-filter-popover-trigger"
+              data-inquiry-filter-popover-trigger
+              aria-label="Filter inquiries"
+              aria-expanded="false"
+              aria-haspopup="dialog"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -75,28 +82,89 @@ const skeletonRows = Array.from({ length: 6 });
               >
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
               </svg>
+              <span
+                class="product-filter-popover-trigger__badge"
+                data-inquiry-filter-popover-badge
+                hidden={!hasActiveFilters}
+              >
+                {activeFilterCount}
+              </span>
             </button>
-          </div>
-        </div>
-        <div class="product-filter-form__advanced-filters">
-          <div class="order-filter-form__field">
-            <select
-              name="status"
-              data-inquiry-filter-field="status"
-              aria-label="Filter by status"
+
+            <div
+              class="product-filter-popover"
+              data-inquiry-filter-popover
+              role="dialog"
+              aria-label="Filter inquiries"
+              hidden
             >
-              <option value="">All statuses</option>
-              {inquiryStatuses.map((status) => (
-                <option value={status} selected={activeFilters.status === status}>
-                  {autoCapitalize(status)}
-                </option>
-              ))}
-            </select>
+              <header class="product-filter-popover__header">
+                <div class="product-filter-popover__heading">
+                  <h3 class="product-filter-popover__title">Filter inquiries</h3>
+                  <p class="product-filter-popover__description">
+                    Narrow inquiries by status.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  class="product-filter-popover__close"
+                  data-inquiry-filter-popover-close
+                  aria-label="Close filters"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.25"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </header>
+
+              <div class="product-filter-popover__body">
+                <label class="product-filter-popover__field">
+                  <span class="product-filter-popover__label">Status</span>
+                  <select
+                    name="status"
+                    data-inquiry-filter-field="status"
+                    aria-label="Filter by status"
+                  >
+                    <option value="">All statuses</option>
+                    {
+                      inquiryStatuses.map((status) => (
+                        <option
+                          value={status}
+                          selected={activeFilters.status === status}
+                        >
+                          {autoCapitalize(status)}
+                        </option>
+                      ))
+                    }
+                  </select>
+                </label>
+              </div>
+
+              <footer class="product-filter-popover__footer">
+                <button
+                  type="button"
+                  class="product-filter-popover__clear"
+                  data-inquiry-filter-popover-clear
+                >
+                  Clear
+                </button>
+              </footer>
+            </div>
           </div>
         </div>
       </form>
-      <div class="order-management-toolbar__actions">
-      </div>
     </div>
     <div data-inquiry-table-shell class="dashboard-interactive-table__surface">
       <DashboardTableBoard>
@@ -104,8 +172,8 @@ const skeletonRows = Array.from({ length: 6 });
           <thead>
             <tr>
               <DashboardTableNumberHeader />
-              <th scope="col">Date Created</th>
-              <th scope="col">Name</th>
+              <AdminProductSortHeader column="created_at" label="Date Created" sortScope="inquiry" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+              <AdminProductSortHeader column="name" label="Name" sortScope="inquiry" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
               <th scope="col">Email</th>
               <th scope="col">Contact</th>
               <th scope="col">Message</th>
@@ -166,8 +234,8 @@ const skeletonRows = Array.from({ length: 6 });
         <thead>
           <tr>
             <DashboardTableNumberHeader />
-            <th scope="col">Date Created</th>
-            <th scope="col">Name</th>
+            <AdminProductSortHeader column="created_at" label="Date Created" sortScope="inquiry" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
+            <AdminProductSortHeader column="name" label="Name" sortScope="inquiry" activeSort={activeFilters.sort} activeDirection={activeFilters.direction} />
             <th scope="col">Email</th>
             <th scope="col">Contact</th>
             <th scope="col">Message</th>
@@ -191,51 +259,36 @@ const skeletonRows = Array.from({ length: 6 });
     </DashboardTableBoard>
   </template>
 
-  <Modal
-    id="inquiry-filters-modal"
-    title="Filter inquiries"
-    description="Narrow inquiries by status."
-  >
-    <div class="product-filter-modal">
-      <label class="product-filter-modal__field">
-        <span class="product-filter-modal__label">Status</span>
-        <select data-inquiry-filter-field="status" aria-label="Filter by status">
-          <option value="">All statuses</option>
-          {inquiryStatuses.map((status) => (
-            <option value={status} selected={activeFilters.status === status}>
-              {autoCapitalize(status)}
-            </option>
-          ))}
-        </select>
-      </label>
-      <div class="product-filter-modal__actions">
-        <button type="button" class="product-filter-modal__clear" data-inquiry-filter-modal-clear>
-          Clear
-        </button>
-        <button type="button" class="product-filter-modal__apply" data-inquiry-filter-modal-apply>
-          Apply filters
-        </button>
-      </div>
-    </div>
-  </Modal>
 </section>
 
 <script>
-  import { initDashboardFilterModals } from "@/lib/client/dashboard-filter-modal";
+  import { initAdminListSort } from "@/lib/client/admin-list-sort";
+  import { initDashboardFilterPopovers } from "@/lib/client/dashboard-filter-popover";
   import { initDashboardFragmentTable } from "@/lib/client/dashboard-fragment-table";
+  import { isAdminInquirySortColumn, nextAdminInquirySort } from "@/lib/admin-dashboard/inquiry-sort";
 
   function initAdminInquiryFilters() {
-    initDashboardFilterModals();
+    initDashboardFilterPopovers();
     initDashboardFragmentTable({
-      cacheKey: "admin-inquiry-filter-cache-v2",
+      cacheKey: "admin-inquiry-filter-cache-v3",
       fragmentPath: "/admin/inquiries-fragment",
       pagePath: "/admin/inquiries",
       formSelector: "[data-inquiry-filter-form]",
       tableShellSelector: "[data-inquiry-table-shell]",
       skeletonTemplateSelector: "[data-inquiry-filter-skeleton]",
-      filterKeys: ["search", "status"],
+      filterKeys: ["search", "status", "sort", "direction"],
       searchInputSelector: "[data-inquiry-search-input]",
       historyStateKey: "inquiryFilterQuery",
+    });
+    initAdminListSort({
+      buttonSelector: "[data-inquiry-sort]",
+      pageSelector: "[data-admin-inquiries-page]",
+      formSelector: "[data-inquiry-filter-form]",
+      sortInputSelector: "[data-inquiry-sort-input]",
+      directionInputSelector: "[data-inquiry-direction-input]",
+      readColumn: (button) => button.dataset.inquirySort,
+      isColumn: isAdminInquirySortColumn,
+      nextSort: nextAdminInquirySort,
     });
   }
   document.addEventListener("DOMContentLoaded", initAdminInquiryFilters);

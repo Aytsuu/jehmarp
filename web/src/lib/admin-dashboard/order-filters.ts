@@ -1,5 +1,17 @@
 import type { OrderStatus } from "./actions";
 import { getOrderStatuses } from "./actions";
+import {
+  isAdminOrderSortColumn,
+  type AdminOrderSortColumn,
+  type AdminOrderSortDirection,
+} from "./order-sort";
+
+export {
+  adminOrderSortColumns,
+  isAdminOrderSortColumn,
+  nextAdminOrderSort,
+} from "./order-sort";
+export type { AdminOrderSortColumn, AdminOrderSortDirection } from "./order-sort";
 
 export const orderSources = ["guest_shop", "agent_submitted", "admin_manual"] as const;
 export const paymentStatuses = ["unpaid", "partial", "paid", "refunded"] as const;
@@ -14,6 +26,8 @@ export type AdminOrderFilters = {
   source?: AdminOrderSource;
   orderStatus?: AdminOrderStatusFilter;
   paymentStatus?: AdminPaymentStatus;
+  sort?: AdminOrderSortColumn;
+  direction?: AdminOrderSortDirection;
 };
 
 export function getAdminOrderStatusFilters(): AdminOrderStatusFilter[] {
@@ -29,6 +43,7 @@ export function parseAdminOrderFilters(url: URL): AdminOrderFilters {
     ...optionalFilter("source", url.searchParams.get("source"), orderSources),
     ...optionalFilter("orderStatus", url.searchParams.get("orderStatus"), getAdminOrderStatusFilters()),
     ...optionalFilter("paymentStatus", url.searchParams.get("paymentStatus"), paymentStatuses),
+    ...optionalOrderSort(url.searchParams.get("sort"), url.searchParams.get("direction")),
   };
 }
 
@@ -39,8 +54,32 @@ export function serializeAdminOrderFilters(filters: AdminOrderFilters): string {
   if (filters.source) params.set("source", filters.source);
   if (filters.orderStatus) params.set("orderStatus", filters.orderStatus);
   if (filters.paymentStatus) params.set("paymentStatus", filters.paymentStatus);
+  if (filters.sort && filters.direction) {
+    params.set("sort", filters.sort);
+    params.set("direction", filters.direction);
+  }
 
   return params.toString();
+}
+
+function optionalOrderSort(
+  sort: string | null,
+  direction: string | null,
+): { sort: AdminOrderSortColumn; direction: AdminOrderSortDirection } | Record<string, never> {
+  const normalizedSort = sort?.trim();
+  const normalizedDirection = direction?.trim();
+  if (!isAdminOrderSortColumn(normalizedSort)) {
+    return {};
+  }
+
+  if (normalizedDirection !== "asc" && normalizedDirection !== "desc") {
+    return {};
+  }
+
+  return {
+    sort: normalizedSort,
+    direction: normalizedDirection === "asc" ? "asc" : "desc",
+  };
 }
 
 function optionalSearchFilter(value: string | null) {

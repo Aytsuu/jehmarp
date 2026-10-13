@@ -634,6 +634,35 @@ describe("parseAdminActionFormData", () => {
     });
   });
 
+  it("parses selected product ids for deletion", () => {
+    const formData = new FormData();
+    formData.set("action", "delete-products");
+    formData.append("productId", "4f65578f-3f1f-4216-9fc2-013ef06661d1");
+    formData.append("productId", "9ad456ad-1d2e-41b2-b297-8ddf6304ece0");
+    formData.append("productId", "4f65578f-3f1f-4216-9fc2-013ef06661d1");
+
+    expect(parseAdminActionFormData(formData, adminUserId)).toEqual({
+      success: true,
+      action: {
+        type: "delete-products",
+        productIds: [
+          "4f65578f-3f1f-4216-9fc2-013ef06661d1",
+          "9ad456ad-1d2e-41b2-b297-8ddf6304ece0",
+        ],
+      },
+    });
+  });
+
+  it("rejects product deletion when no products are selected", () => {
+    const formData = new FormData();
+    formData.set("action", "delete-products");
+
+    expect(parseAdminActionFormData(formData, adminUserId)).toEqual({
+      success: false,
+      errors: ["Select at least one product."],
+    });
+  });
+
   it("parses customer reseller classification when saving customers", () => {
     const formData = new FormData();
     formData.set("action", "save-customer");
@@ -1640,6 +1669,190 @@ describe("executeAdminAction", () => {
       agentOrderStatusEq,
     };
   }
+
+  it("deletes products that are not on an order and removes their images", async () => {
+    const productId = "4f65578f-3f1f-4216-9fc2-013ef06661d1";
+    const orderItemIn = vi.fn(async () => ({ data: [], error: null }));
+    const productSelectIn = vi.fn(async () => ({
+      data: [{ id: productId, image_path: "products/pork.png" }],
+      error: null,
+    }));
+    const productDeleteIn = vi.fn(async () => ({ error: null }));
+    const remove = vi.fn(async () => ({ error: null }));
+    const from = vi.fn((table: string) => {
+      if (table === "order_item") {
+        return { select: () => ({ in: orderItemIn }) };
+      }
+
+      if (table === "product") {
+        return {
+          select: () => ({ in: productSelectIn }),
+          delete: () => ({ in: productDeleteIn }),
+        };
+      }
+
+      throw new Error(`Unexpected table ${table}`);
+    });
+    mocks.createSupabaseAdminClient.mockReturnValue({
+      from,
+      storage: { from: () => ({ remove }) },
+    });
+
+    const result = await executeAdminAction({ from: vi.fn() } as never, {
+      type: "delete-products",
+      productIds: [productId],
+    }, adminUserId);
+
+    expect(productDeleteIn).toHaveBeenCalledWith("id", [productId]);
+    expect(remove).toHaveBeenCalledWith(["products/pork.png"]);
+    expect(result).toEqual({ statusMessage: "Product deleted." });
+  });
+
+  it("removes a product image stored as a public storage url", async () => {
+    const productId = "4f65578f-3f1f-4216-9fc2-013ef06661d1";
+    const remove = vi.fn(async () => ({ error: null }));
+    const from = vi.fn((table: string) => {
+      if (table === "order_item") {
+        return { select: () => ({ in: async () => ({ data: [], error: null }) }) };
+      }
+
+      if (table === "product") {
+        return {
+          select: () => ({
+            in: async () => ({
+              data: [{
+                id: productId,
+                image_path: "http://127.0.0.1:54321/storage/v1/object/public/product-images/products/pork%20belly.png",
+              }],
+              error: null,
+            }),
+          }),
+          delete: () => ({ in: async () => ({ error: null }) }),
+        };
+      }
+
+      throw new Error(`Unexpected table ${table}`);
+    });
+    mocks.createSupabaseAdminClient.mockReturnValue({
+      from,
+      storage: { from: () => ({ remove }) },
+    });
+
+    await executeAdminAction({ from: vi.fn() } as never, {
+      type: "delete-products",
+      productIds: [productId],
+    }, adminUserId);
+
+    expect(remove).toHaveBeenCalledWith(["products/pork belly.png"]);
+  });
+
+  it("fails when the product image cannot be removed from storage", async () => {
+    const productId = "4f65578f-3f1f-4216-9fc2-013ef06661d1";
+    const from = vi.fn((table: string) => {
+      if (table === "order_item") {
+        return { select: () => ({ in: async () => ({ data: [], error: null }) }) };
+      }
+
+      if (table === "product") {
+        return {
+          select: () => ({
+            in: async () => ({
+              data: [{ id: productId, image_path: "products/pork.png" }],
+              error: null,
+            }),
+          }),
+          delete: () => ({ in: async () => ({ error: null }) }),
+        };
+      }
+
+      throw new Error(`Unexpected table ${table}`);
+    });
+    mocks.createSupabaseAdminClient.mockReturnValue({
+      from,
+      storage: {
+        from: () => ({
+          remove: async () => ({ error: { message: "permission denied" } }),
+        }),
+      },
+    });
+
+    await expect(executeAdminAction({ from: vi.fn() } as never, {
+      type: "delete-products",
+      productIds: [productId],
+    }, adminUserId)).rejects.toThrow("Unable to delete the product image.");
+  });
+
+  it("keeps products that are already on an order and deletes the rest", async () => {
+    const deletableId = "4f65578f-3f1f-4216-9fc2-013ef06661d1";
+    const referencedId = "9ad456ad-1d2e-41b2-b297-8ddf6304ece0";
+    const orderItemIn = vi.fn(async () => ({
+      data: [{ product_id: referencedId }],
+      error: null,
+    }));
+    const productSelectIn = vi.fn(async () => ({
+      data: [{ id: deletableId, image_path: "products/pork.png" }],
+      error: null,
+    }));
+    const productDeleteIn = vi.fn(async () => ({ error: null }));
+    const remove = vi.fn(async () => ({ error: null }));
+    const from = vi.fn((table: string) => {
+      if (table === "order_item") {
+        return { select: () => ({ in: orderItemIn }) };
+      }
+
+      if (table === "product") {
+        return {
+          select: () => ({ in: productSelectIn }),
+          delete: () => ({ in: productDeleteIn }),
+        };
+      }
+
+      throw new Error(`Unexpected table ${table}`);
+    });
+    mocks.createSupabaseAdminClient.mockReturnValue({
+      from,
+      storage: { from: () => ({ remove }) },
+    });
+
+    const result = await executeAdminAction({ from: vi.fn() } as never, {
+      type: "delete-products",
+      productIds: [deletableId, referencedId],
+    }, adminUserId);
+
+    expect(productDeleteIn).toHaveBeenCalledWith("id", [deletableId]);
+    expect(remove).toHaveBeenCalledTimes(1);
+    expect(remove).toHaveBeenCalledWith(["products/pork.png"]);
+    expect(result).toEqual({
+      statusMessage: "Deleted 1 product. Products on an order were kept.",
+    });
+  });
+
+  it("rejects deletion when every selected product is on an order", async () => {
+    const productId = "4f65578f-3f1f-4216-9fc2-013ef06661d1";
+    const productDeleteIn = vi.fn(async () => ({ error: null }));
+    const from = vi.fn((table: string) => {
+      if (table === "order_item") {
+        return {
+          select: () => ({
+            in: async () => ({ data: [{ product_id: productId }], error: null }),
+          }),
+        };
+      }
+
+      if (table === "product") {
+        return { delete: () => ({ in: productDeleteIn }) };
+      }
+
+      throw new Error(`Unexpected table ${table}`);
+    });
+    mocks.createSupabaseAdminClient.mockReturnValue({ from });
+
+    await expect(executeAdminAction({ from: vi.fn() } as never, {
+      type: "delete-products",
+      productIds: [productId],
+    }, adminUserId)).rejects.toThrow("Products on an order cannot be deleted.");
+    expect(productDeleteIn).not.toHaveBeenCalled();
+  });
 
   it("approves pending agent orders without customers into pending customers status", async () => {
     const db = createApproveAgentOrderClient();

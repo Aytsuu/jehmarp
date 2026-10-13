@@ -1410,6 +1410,32 @@
     min-width: 0;
   }
 
+  .product-selection-delete {
+    align-self: center;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    color: #9ca3af;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: normal;
+    text-transform: none;
+  }
+
+  .product-selection-delete[hidden] {
+    display: none;
+  }
+
+  .product-selection-delete:hover:not(:disabled),
+  .product-selection-delete:focus-visible:not(:disabled) {
+    background: none;
+    color: var(--color-brand-red);
+  }
+
   .product-filter-form__search-row,
   .product-filter-form__advanced-filters {
     display: contents;
@@ -1444,6 +1470,11 @@
       background-color 0.15s ease,
       color 0.15s ease,
       border-color 0.15s ease;
+  }
+
+  .product-filter-form__icon-trigger svg {
+    display: block;
+    flex-shrink: 0;
   }
 
   .product-filter-form__icon-trigger:hover {
@@ -1535,6 +1566,222 @@
 
   .product-filter-modal__apply:hover {
     background: #551313;
+  }
+
+  .product-filter-popover-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .product-filter-popover-trigger {
+    position: relative;
+  }
+
+  .product-filter-popover-trigger__badge {
+    position: absolute;
+    top: -0.35rem;
+    right: -0.35rem;
+    min-width: 1.15rem;
+    height: 1.15rem;
+    padding: 0 0.25rem;
+    border-radius: 9999px;
+    background: var(--color-brand-red);
+    color: #ffffff;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+  }
+
+  .product-filter-popover-trigger__badge[hidden] {
+    display: none;
+  }
+
+  .product-filter-popover {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    z-index: 100;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    width: min(22rem, calc(100vw - 2rem));
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    background: #ffffff;
+    box-shadow:
+      0 10px 25px -5px rgba(0, 0, 0, 0.1),
+      0 8px 10px -6px rgba(0, 0, 0, 0.1),
+      0 0 0 1px rgba(0, 0, 0, 0.05);
+    animation: productFilterPopoverEnter 0.15s ease-out;
+  }
+
+  .product-filter-popover[hidden] {
+    display: none;
+  }
+
+  @keyframes productFilterPopoverEnter {
+    from {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @media (max-width: 48rem) {
+    .product-filter-popover {
+      left: auto;
+      right: 0;
+    }
+  }
+
+  .product-filter-popover__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1rem 1rem 0.75rem;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  .product-filter-popover__heading {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .product-filter-popover__title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: #111827;
+  }
+
+  .product-filter-popover__description {
+    margin: 0.25rem 0 0;
+    color: #6b7280;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+
+  .product-filter-popover__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    min-height: unset;
+    padding: 0;
+    border: none;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: #9ca3af;
+    text-transform: none;
+    letter-spacing: normal;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .product-filter-popover__close svg {
+    pointer-events: none;
+    flex-shrink: 0;
+  }
+
+  button.product-filter-popover__close:hover,
+  .product-filter-popover__close:hover {
+    background: #f3f4f6;
+    color: #111827;
+  }
+
+  .product-filter-popover__close:focus-visible {
+    outline: 2px solid var(--color-brand-red);
+    outline-offset: 1px;
+  }
+
+  .product-filter-popover__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    padding: 1rem;
+  }
+
+  .product-filter-popover__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .product-filter-popover__label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .product-filter-popover__field select {
+    width: 100%;
+    height: 2.35rem;
+    padding: 0 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    background: #ffffff;
+    font-size: 0.875rem;
+    color: #111827;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .product-filter-popover__field select:focus {
+    border-color: var(--color-brand-red);
+    box-shadow: 0 0 0 2px rgba(102, 24, 24, 0.12);
+  }
+
+  .product-filter-popover__footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 0.625rem 1rem;
+    border-top: 1px solid #f3f4f6;
+    background: #f9fafb;
+    border-bottom-left-radius: 0.75rem;
+    border-bottom-right-radius: 0.75rem;
+  }
+
+  .product-filter-popover__clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: unset;
+    padding: 0.375rem 0.625rem;
+    border: none;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: #6b7280;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: normal;
+    cursor: pointer;
+    transition: color 0.15s ease, background-color 0.15s ease;
+  }
+
+  button.product-filter-popover__clear:hover,
+  .product-filter-popover__clear:hover {
+    color: var(--color-brand-red);
+    background: rgba(102, 24, 24, 0.05);
+  }
+
+  .product-filter-popover__clear:focus-visible {
+    outline: 2px solid var(--color-brand-red);
+    outline-offset: 1px;
   }
 
   .order-documents-modal {
@@ -1825,6 +2072,335 @@
     }
   }
 
+  [data-admin-products-page] .product-filter-form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  [data-admin-products-page] .dashboard-interactive-table>.product-management-toolbar .product-filter-form {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  [data-admin-products-page] .product-filter-form__search-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+  }
+
+  [data-admin-products-page] .product-filter-form__field--search,
+  [data-admin-products-page] .dashboard-interactive-table>.product-management-toolbar .product-filter-form__field--search {
+    flex: 1 1 auto;
+    min-width: 10rem;
+    max-width: 20rem;
+  }
+
+  [data-admin-products-page] .product-management-toolbar__create {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+    width: auto;
+    min-height: 2.35rem;
+    height: 2.35rem;
+    padding: 0 1rem;
+    border: none;
+    border-radius: 0.375rem;
+    background-color: var(--color-brand-red);
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+
+  [data-admin-products-page] .product-management-toolbar__create:hover:not(:disabled) {
+    background-color: #551313;
+  }
+
+  [data-admin-products-page] .product-management-toolbar__create svg {
+    display: block;
+    flex-shrink: 0;
+    width: 1.15rem;
+    height: 1.15rem;
+    min-width: 1.15rem;
+    min-height: 1.15rem;
+    stroke-width: 2.5;
+  }
+
+  [data-admin-orders-page] .order-filter-form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  [data-admin-orders-page] .order-management-controls > .order-management-toolbar .order-filter-form {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  [data-admin-orders-page] .product-filter-form__search-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+  }
+
+  [data-admin-orders-page] .order-filter-form__field--search,
+  [data-admin-orders-page] .order-management-controls > .order-management-toolbar .order-filter-form__field--search {
+    flex: 1 1 auto;
+    min-width: 10rem;
+    max-width: 20rem;
+  }
+
+  [data-admin-orders-page] .order-management-toolbar__document-menu {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+    width: auto;
+    min-height: 2.35rem;
+    height: 2.35rem;
+    padding: 0 0.85rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    background-color: transparent;
+    color: var(--color-brand-muted-black);
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+
+  [data-admin-orders-page] .order-management-toolbar__document-menu:hover:not(:disabled),
+  [data-admin-orders-page] .order-management-toolbar__document-menu[aria-expanded="true"]:not(:disabled) {
+    background-color: #f3f4f6;
+    color: #111827;
+  }
+
+  [data-admin-orders-page] .order-management-toolbar__document-menu:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  [data-admin-orders-page] .order-management-toolbar__document-menu svg {
+    display: block;
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+    min-width: 1rem;
+    min-height: 1rem;
+  }
+
+  [data-admin-orders-page] .order-management-toolbar__create {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+    width: auto;
+    min-height: 2.35rem;
+    height: 2.35rem;
+    padding: 0 1rem;
+    border: none;
+    border-radius: 0.375rem;
+    background-color: var(--color-brand-red);
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+
+  [data-admin-orders-page] .order-management-toolbar__create:hover:not(:disabled) {
+    background-color: #551313;
+  }
+
+  [data-admin-orders-page] .order-management-toolbar__create:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  [data-admin-orders-page] .order-management-toolbar__create svg {
+    display: block;
+    flex-shrink: 0;
+    width: 1.15rem;
+    height: 1.15rem;
+    min-width: 1.15rem;
+    min-height: 1.15rem;
+    stroke-width: 2.5;
+  }
+
+  [data-admin-sales-page] .order-filter-form,
+  [data-admin-invoices-page] .order-filter-form,
+  [data-admin-customers-page] .order-filter-form,
+  [data-admin-agents-page] .order-filter-form,
+  [data-admin-reseller-applications-page] .order-filter-form,
+  [data-admin-inquiries-page] .order-filter-form,
+  [data-admin-sales-page] .dashboard-interactive-table > .order-management-toolbar .order-filter-form,
+  [data-admin-invoices-page] .dashboard-interactive-table > .order-management-toolbar .order-filter-form,
+  [data-admin-customers-page] .dashboard-interactive-table > .order-management-toolbar .order-filter-form,
+  [data-admin-agents-page] .dashboard-interactive-table > .order-management-toolbar .order-filter-form,
+  [data-admin-reseller-applications-page] .dashboard-interactive-table > .order-management-toolbar .order-filter-form,
+  [data-admin-inquiries-page] .dashboard-interactive-table > .order-management-toolbar .order-filter-form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  [data-admin-sales-page] .product-filter-form__search-row,
+  [data-admin-invoices-page] .product-filter-form__search-row,
+  [data-admin-customers-page] .product-filter-form__search-row,
+  [data-admin-agents-page] .product-filter-form__search-row,
+  [data-admin-reseller-applications-page] .product-filter-form__search-row,
+  [data-admin-inquiries-page] .product-filter-form__search-row,
+  [data-admin-sales-page] .dashboard-interactive-table > .order-management-toolbar .product-filter-form__search-row,
+  [data-admin-invoices-page] .dashboard-interactive-table > .order-management-toolbar .product-filter-form__search-row,
+  [data-admin-customers-page] .dashboard-interactive-table > .order-management-toolbar .product-filter-form__search-row,
+  [data-admin-agents-page] .dashboard-interactive-table > .order-management-toolbar .product-filter-form__search-row,
+  [data-admin-reseller-applications-page] .dashboard-interactive-table > .order-management-toolbar .product-filter-form__search-row,
+  [data-admin-inquiries-page] .dashboard-interactive-table > .order-management-toolbar .product-filter-form__search-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+  }
+
+  [data-admin-sales-page] .order-filter-form__field--search,
+  [data-admin-invoices-page] .order-filter-form__field--search,
+  [data-admin-customers-page] .order-filter-form__field--search,
+  [data-admin-agents-page] .order-filter-form__field--search,
+  [data-admin-reseller-applications-page] .order-filter-form__field--search,
+  [data-admin-inquiries-page] .order-filter-form__field--search,
+  [data-admin-sales-page] .dashboard-interactive-table > .order-management-toolbar .order-filter-form__field--search,
+  [data-admin-invoices-page] .dashboard-interactive-table > .order-management-toolbar .order-filter-form__field--search,
+  [data-admin-customers-page] .dashboard-interactive-table > .order-management-toolbar .order-filter-form__field--search,
+  [data-admin-agents-page] .dashboard-interactive-table > .order-management-toolbar .order-filter-form__field--search,
+  [data-admin-reseller-applications-page] .dashboard-interactive-table > .order-management-toolbar .order-filter-form__field--search,
+  [data-admin-inquiries-page] .dashboard-interactive-table > .order-management-toolbar .order-filter-form__field--search {
+    flex: 1 1 auto;
+    min-width: 10rem;
+    max-width: 20rem;
+  }
+
+  [data-admin-customers-page] .customer-management-toolbar__link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+    width: auto;
+    min-height: 2.35rem;
+    height: 2.35rem;
+    padding: 0 0.85rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    background-color: transparent;
+    color: var(--color-brand-muted-black);
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+
+  [data-admin-customers-page] .customer-management-toolbar__link:hover:not(:disabled) {
+    background-color: #f3f4f6;
+    color: #111827;
+  }
+
+  [data-admin-customers-page] .customer-management-toolbar__link svg {
+    display: block;
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+    min-width: 1rem;
+    min-height: 1rem;
+  }
+
+  [data-admin-customers-page] .customer-management-toolbar__create,
+  [data-admin-agents-page] .agent-management-toolbar__create {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+    width: auto;
+    min-height: 2.35rem;
+    height: 2.35rem;
+    padding: 0 1rem;
+    border: none;
+    border-radius: 0.375rem;
+    background-color: var(--color-brand-red);
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+
+  [data-admin-customers-page] .customer-management-toolbar__create:hover:not(:disabled),
+  [data-admin-agents-page] .agent-management-toolbar__create:hover:not(:disabled) {
+    background-color: #551313;
+  }
+
+  [data-admin-customers-page] .customer-management-toolbar__create:disabled,
+  [data-admin-agents-page] .agent-management-toolbar__create:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  [data-admin-customers-page] .customer-management-toolbar__create svg,
+  [data-admin-agents-page] .agent-management-toolbar__create svg {
+    display: block;
+    flex-shrink: 0;
+    width: 1.15rem;
+    height: 1.15rem;
+    min-width: 1.15rem;
+    min-height: 1.15rem;
+    stroke-width: 2.5;
+  }
+
   @media (max-width: 63.99rem) {
     [data-admin-products-page] .table-filters.product-management-toolbar {
       min-width: 0;
@@ -1836,17 +2412,10 @@
       min-width: 0;
     }
 
-    [data-admin-products-page] .product-filter-form--triple {
-      grid-template-columns: minmax(0, 1fr);
-      width: 100%;
-      min-width: 0;
-    }
-
     [data-admin-products-page] .product-filter-form__search-row {
       display: flex;
-      align-items: stretch;
+      align-items: center;
       gap: 0.5rem;
-      grid-column: 1 / -1;
       width: 100%;
       min-width: 0;
     }
@@ -1864,19 +2433,7 @@
       min-width: 0;
     }
 
-    [data-admin-products-page] .product-filter-form__toolbar-actions {
-      display: inline-flex;
-      flex: 0 0 auto;
-    }
-
-    [data-admin-products-page] .product-filter-form__advanced-filters {
-      display: none;
-    }
-
-    [data-admin-products-page] .product-management-toolbar__actions {
-      display: none !important;
-    }
-
+    [data-admin-orders-page] .table-filters.order-management-toolbar,
     [data-admin-orders-page] .order-management-controls > .order-management-toolbar {
       min-width: 0;
     }
@@ -1888,18 +2445,10 @@
       max-width: 100%;
     }
 
-    [data-admin-orders-page] .order-filter-form--quad {
-      grid-template-columns: minmax(0, 1fr);
-      width: 100%;
-      min-width: 0;
-      max-width: 100%;
-    }
-
     [data-admin-orders-page] .product-filter-form__search-row {
       display: flex;
-      align-items: stretch;
+      align-items: center;
       gap: 0.5rem;
-      grid-column: 1 / -1;
       width: 100%;
       min-width: 0;
       max-width: 100%;
@@ -1918,52 +2467,12 @@
       min-width: 0;
     }
 
-    [data-admin-orders-page] .product-filter-form__toolbar-actions {
-      display: inline-flex;
-      flex: 0 0 auto;
-      flex-shrink: 0;
-    }
-
-    [data-admin-orders-page] .product-filter-form__advanced-filters {
-      display: none;
-    }
-
-    [data-admin-orders-page] .order-management-toolbar__document-modal-trigger {
-      display: inline-flex;
-      flex: 0 0 auto;
-    }
-
-    [data-admin-orders-page] .order-management-toolbar__actions {
-      display: none !important;
-    }
-
-    [data-admin-orders-page] .product-filter-form__toolbar-actions .product-filter-form__icon-trigger {
-      width: 2.1rem;
-      min-width: 2.1rem;
-      height: 2.1rem;
-    }
-
-    [data-admin-orders-page] .product-filter-form__toolbar-actions .product-filter-form__icon-trigger svg {
-      width: 16px;
-      height: 16px;
-    }
-
-    [data-admin-orders-page] .product-filter-form__toolbar-actions .product-filter-form__icon-trigger:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
-
-    [data-admin-orders-page] .product-filter-form__toolbar-actions .product-filter-form__create-trigger {
-      border-color: var(--color-brand-red);
-      background: var(--color-brand-red);
-      color: #ffffff;
-    }
-
-    [data-admin-orders-page] .product-filter-form__toolbar-actions .product-filter-form__create-trigger:hover:not(:disabled) {
-      background: #551313;
-      color: #ffffff;
-    }
-
+    [data-admin-sales-page] .table-filters.order-management-toolbar,
+    [data-admin-invoices-page] .table-filters.order-management-toolbar,
+    [data-admin-customers-page] .table-filters.order-management-toolbar,
+    [data-admin-agents-page] .table-filters.order-management-toolbar,
+    [data-admin-reseller-applications-page] .table-filters.order-management-toolbar,
+    [data-admin-inquiries-page] .table-filters.order-management-toolbar,
     [data-admin-sales-page] .dashboard-interactive-table > .order-management-toolbar,
     [data-admin-invoices-page] .dashboard-interactive-table > .order-management-toolbar,
     [data-admin-customers-page] .dashboard-interactive-table > .order-management-toolbar,
@@ -1973,6 +2482,12 @@
       min-width: 0;
     }
 
+    [data-admin-sales-page] .order-filter-form,
+    [data-admin-invoices-page] .order-filter-form,
+    [data-admin-customers-page] .order-filter-form,
+    [data-admin-agents-page] .order-filter-form,
+    [data-admin-reseller-applications-page] .order-filter-form,
+    [data-admin-inquiries-page] .order-filter-form,
     [data-admin-sales-page] .dashboard-interactive-table > .order-management-toolbar .order-filter-form,
     [data-admin-invoices-page] .dashboard-interactive-table > .order-management-toolbar .order-filter-form,
     [data-admin-customers-page] .dashboard-interactive-table > .order-management-toolbar .order-filter-form,
@@ -1985,18 +2500,6 @@
       max-width: 100%;
     }
 
-    [data-admin-sales-page] .order-filter-form--paired,
-    [data-admin-invoices-page] .order-filter-form--paired,
-    [data-admin-customers-page] .order-filter-form--paired,
-    [data-admin-agents-page] .order-filter-form--paired,
-    [data-admin-reseller-applications-page] .order-filter-form--paired,
-    [data-admin-inquiries-page] .order-filter-form--paired {
-      grid-template-columns: minmax(0, 1fr);
-      width: 100%;
-      min-width: 0;
-      max-width: 100%;
-    }
-
     [data-admin-sales-page] .product-filter-form__search-row,
     [data-admin-invoices-page] .product-filter-form__search-row,
     [data-admin-customers-page] .product-filter-form__search-row,
@@ -2004,9 +2507,8 @@
     [data-admin-reseller-applications-page] .product-filter-form__search-row,
     [data-admin-inquiries-page] .product-filter-form__search-row {
       display: flex;
-      align-items: stretch;
+      align-items: center;
       gap: 0.5rem;
-      grid-column: 1 / -1;
       width: 100%;
       min-width: 0;
       max-width: 100%;
@@ -2039,74 +2541,140 @@
       width: 100%;
       min-width: 0;
     }
-
-    [data-admin-sales-page] .product-filter-form__toolbar-actions,
-    [data-admin-invoices-page] .product-filter-form__toolbar-actions,
-    [data-admin-customers-page] .product-filter-form__toolbar-actions,
-    [data-admin-agents-page] .product-filter-form__toolbar-actions,
-    [data-admin-reseller-applications-page] .product-filter-form__toolbar-actions,
-    [data-admin-inquiries-page] .product-filter-form__toolbar-actions {
-      display: inline-flex;
-      flex: 0 0 auto;
-      flex-shrink: 0;
-    }
-
-    [data-admin-sales-page] .product-filter-form__advanced-filters,
-    [data-admin-invoices-page] .product-filter-form__advanced-filters,
-    [data-admin-customers-page] .product-filter-form__advanced-filters,
-    [data-admin-agents-page] .product-filter-form__advanced-filters,
-    [data-admin-reseller-applications-page] .product-filter-form__advanced-filters,
-    [data-admin-inquiries-page] .product-filter-form__advanced-filters {
-      display: none;
-    }
-
-    [data-admin-sales-page] .order-management-toolbar__actions,
-    [data-admin-invoices-page] .order-management-toolbar__actions,
-    [data-admin-customers-page] .order-management-toolbar__actions,
-    [data-admin-agents-page] .order-management-toolbar__actions,
-    [data-admin-reseller-applications-page] .order-management-toolbar__actions,
-    [data-admin-inquiries-page] .order-management-toolbar__actions {
-      display: none !important;
-    }
-
-    [data-admin-sales-page] .product-filter-form__toolbar-actions .product-filter-form__icon-trigger,
-    [data-admin-invoices-page] .product-filter-form__toolbar-actions .product-filter-form__icon-trigger,
-    [data-admin-customers-page] .product-filter-form__toolbar-actions .product-filter-form__icon-trigger,
-    [data-admin-agents-page] .product-filter-form__toolbar-actions .product-filter-form__icon-trigger,
-    [data-admin-reseller-applications-page] .product-filter-form__toolbar-actions .product-filter-form__icon-trigger,
-    [data-admin-inquiries-page] .product-filter-form__toolbar-actions .product-filter-form__icon-trigger {
-      width: 2.1rem;
-      min-width: 2.1rem;
-      height: 2.1rem;
-    }
-
-    [data-admin-sales-page] .product-filter-form__toolbar-actions .product-filter-form__icon-trigger svg,
-    [data-admin-invoices-page] .product-filter-form__toolbar-actions .product-filter-form__icon-trigger svg,
-    [data-admin-customers-page] .product-filter-form__toolbar-actions .product-filter-form__icon-trigger svg,
-    [data-admin-agents-page] .product-filter-form__toolbar-actions .product-filter-form__icon-trigger svg,
-    [data-admin-reseller-applications-page] .product-filter-form__toolbar-actions .product-filter-form__icon-trigger svg,
-    [data-admin-inquiries-page] .product-filter-form__toolbar-actions .product-filter-form__icon-trigger svg {
-      width: 16px;
-      height: 16px;
-    }
-
-    [data-admin-customers-page] .product-filter-form__toolbar-actions .product-filter-form__create-trigger,
-    [data-admin-agents-page] .product-filter-form__toolbar-actions .product-filter-form__create-trigger {
-      border-color: var(--color-brand-red);
-      background: var(--color-brand-red);
-      color: #ffffff;
-    }
-
-    [data-admin-customers-page] .product-filter-form__toolbar-actions .product-filter-form__create-trigger:hover:not(:disabled),
-    [data-admin-agents-page] .product-filter-form__toolbar-actions .product-filter-form__create-trigger:hover:not(:disabled) {
-      background: #551313;
-      color: #ffffff;
-    }
   }
 
   @media (min-width: 64rem) {
     [data-admin-orders-page] .order-management-toolbar__document-modal-trigger {
       display: none;
+    }
+  }
+
+  @media (max-width: 48rem) {
+    [data-admin-products-page] .product-management-toolbar__create {
+      padding: 0 !important;
+      width: 2.35rem !important;
+      min-width: 2.35rem !important;
+      max-width: 2.35rem !important;
+      height: 2.35rem !important;
+      justify-content: center;
+    }
+
+    [data-admin-products-page] .product-management-toolbar__create-text {
+      display: none !important;
+    }
+
+    [data-admin-products-page] .product-management-toolbar__create svg {
+      width: 1.25rem !important;
+      height: 1.25rem !important;
+      min-width: 1.25rem !important;
+      min-height: 1.25rem !important;
+      stroke-width: 2.5;
+    }
+
+    [data-admin-products-page] .product-selection-delete {
+      padding: 0 !important;
+      width: 2.35rem !important;
+      min-width: 2.35rem !important;
+      max-width: 2.35rem !important;
+      height: 2.35rem !important;
+      justify-content: center;
+    }
+
+    [data-admin-products-page] .product-selection-delete__text {
+      display: none !important;
+    }
+
+    [data-admin-products-page] .product-selection-delete svg {
+      width: 1.15rem !important;
+      height: 1.15rem !important;
+      min-width: 1.15rem !important;
+      min-height: 1.15rem !important;
+      flex-shrink: 0;
+    }
+
+    [data-admin-orders-page] .order-management-toolbar__document-menu {
+      padding: 0 !important;
+      width: 2.35rem !important;
+      min-width: 2.35rem !important;
+      max-width: 2.35rem !important;
+      height: 2.35rem !important;
+      justify-content: center;
+    }
+
+    [data-admin-orders-page] .order-management-toolbar__document-menu-text {
+      display: none !important;
+    }
+
+    [data-admin-orders-page] .order-management-toolbar__document-menu svg {
+      width: 1.15rem !important;
+      height: 1.15rem !important;
+      min-width: 1.15rem !important;
+      min-height: 1.15rem !important;
+    }
+
+    [data-admin-orders-page] .order-management-toolbar__create {
+      padding: 0 !important;
+      width: 2.35rem !important;
+      min-width: 2.35rem !important;
+      max-width: 2.35rem !important;
+      height: 2.35rem !important;
+      justify-content: center;
+    }
+
+    [data-admin-orders-page] .order-management-toolbar__create-text {
+      display: none !important;
+    }
+
+    [data-admin-orders-page] .order-management-toolbar__create svg {
+      width: 1.25rem !important;
+      height: 1.25rem !important;
+      min-width: 1.25rem !important;
+      min-height: 1.25rem !important;
+      stroke-width: 2.5;
+    }
+
+    [data-admin-customers-page] .customer-management-toolbar__link {
+      padding: 0 !important;
+      width: 2.35rem !important;
+      min-width: 2.35rem !important;
+      max-width: 2.35rem !important;
+      height: 2.35rem !important;
+      justify-content: center;
+    }
+
+    [data-admin-customers-page] .customer-management-toolbar__link-text {
+      display: none !important;
+    }
+
+    [data-admin-customers-page] .customer-management-toolbar__link svg {
+      width: 1.15rem !important;
+      height: 1.15rem !important;
+      min-width: 1.15rem !important;
+      min-height: 1.15rem !important;
+    }
+
+    [data-admin-customers-page] .customer-management-toolbar__create,
+    [data-admin-agents-page] .agent-management-toolbar__create {
+      padding: 0 !important;
+      width: 2.35rem !important;
+      min-width: 2.35rem !important;
+      max-width: 2.35rem !important;
+      height: 2.35rem !important;
+      justify-content: center;
+    }
+
+    [data-admin-customers-page] .customer-management-toolbar__create-text,
+    [data-admin-agents-page] .agent-management-toolbar__create-text {
+      display: none !important;
+    }
+
+    [data-admin-customers-page] .customer-management-toolbar__create svg,
+    [data-admin-agents-page] .agent-management-toolbar__create svg {
+      width: 1.25rem !important;
+      height: 1.25rem !important;
+      min-width: 1.25rem !important;
+      min-height: 1.25rem !important;
+      stroke-width: 2.5;
     }
   }
 
@@ -2133,6 +2701,20 @@
     .order-management-toolbar__limit select,
     .order-management-toolbar__create {
       width: 100%;
+    }
+
+    [data-admin-products-page] .product-management-toolbar__create {
+      width: 2.35rem;
+    }
+
+    [data-admin-orders-page] .order-management-toolbar__create {
+      width: 2.35rem;
+    }
+
+    [data-admin-customers-page] .customer-management-toolbar__link,
+    [data-admin-customers-page] .customer-management-toolbar__create,
+    [data-admin-agents-page] .agent-management-toolbar__create {
+      width: 2.35rem;
     }
   }
 
@@ -4452,10 +5034,7 @@
     flex: 0 0 auto;
   }
 
-  .dashboard-interactive-table>.table-filters .table-filters__search,
-  .dashboard-interactive-table>.product-management-toolbar .product-filter-form__field--search,
-  .dashboard-interactive-table>.order-management-toolbar .order-filter-form__field--search,
-  .order-management-controls>.order-management-toolbar .order-filter-form__field--search {
+  .dashboard-interactive-table>.table-filters .table-filters__search {
     flex: 1;
     min-width: 22rem;
     max-width: 40rem;
@@ -12349,6 +12928,43 @@
     letter-spacing: normal;
     white-space: nowrap;
     text-overflow: ellipsis;
+  }
+
+  .dashboard-table__sort {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    color: inherit;
+    font-size: inherit;
+    font-weight: 500;
+    letter-spacing: normal;
+    line-height: inherit;
+    text-transform: none;
+  }
+
+  .dashboard-table__sort span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dashboard-table__sort svg {
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  .dashboard-table__sort:hover:not(:disabled),
+  .dashboard-table__sort:focus-visible:not(:disabled) {
+    background: none;
+    color: var(--color-brand-red);
   }
 
   .dashboard-table td {

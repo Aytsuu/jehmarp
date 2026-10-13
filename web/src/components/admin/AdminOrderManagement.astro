@@ -1,7 +1,7 @@
 ---
+import AdminProductSortHeader from "@/components/admin/AdminProductSortHeader.astro";
 import Accordion from "@/components/ui/Accordion.astro";
 import ActionMenu, { type ActionMenuItem } from "@/components/ActionMenu.astro";
-import Button from "@/components/ui/Button.astro";
 import Modal from "@/components/ui/Modal.astro";
 import Sheet from "@/components/ui/Sheet.astro";
 import Picker from "@/components/ui/Picker.astro";
@@ -41,6 +41,11 @@ const defaultTime = new Intl.DateTimeFormat("en-GB", {
 const activeProducts = data.products.filter((product) => product.is_active);
 const canCreateOrder = activeProducts.length > 0;
 const orderStatuses = getAdminOrderStatusFilters();
+const activeFilterCount =
+  (activeFilters.source ? 1 : 0) +
+  (activeFilters.orderStatus ? 1 : 0) +
+  (activeFilters.paymentStatus ? 1 : 0);
+const hasActiveFilters = activeFilterCount > 0;
 const skeletonRows = Array.from({ length: 6 });
 const orderRows = data.orderRows;
 const orderActionPath = filterQuery ? `/admin/orders?${filterQuery}` : "/admin/orders";
@@ -451,11 +456,23 @@ function linkedCustomerOrdersLabel(count: number) {
       <form
         method="get"
         action="/admin/orders"
-        class="order-filter-form order-filter-form--quad"
+        class="order-filter-form"
         data-order-filter-form
         data-current-filter-query={filterQuery}
         aria-label="Filter orders"
       >
+        <input
+          type="hidden"
+          name="sort"
+          value={activeFilters.sort ?? ""}
+          data-order-sort-input
+        />
+        <input
+          type="hidden"
+          name="direction"
+          value={activeFilters.direction ?? ""}
+          data-order-direction-input
+        />
         <div class="product-filter-form__search-row">
           <div class="order-filter-form__field order-filter-form__field--search">
             <input
@@ -468,20 +485,23 @@ function linkedCustomerOrdersLabel(count: number) {
               data-order-search-input
             />
           </div>
-          <div class="product-filter-form__toolbar-actions">
+
+          <div
+            class="product-filter-popover-container"
+            data-order-filter-popover-root
+          >
             <button
               type="button"
-              class="product-filter-form__icon-trigger"
-              data-order-filter-modal-trigger
-              data-open-dashboard-modal="order-filters-modal"
-              aria-label="Open order filters"
-              aria-pressed="false"
-              aria-controls="order-filters-modal"
+              class="product-filter-form__icon-trigger product-filter-popover-trigger"
+              data-order-filter-popover-trigger
+              aria-label="Filter orders"
+              aria-expanded="false"
+              aria-haspopup="dialog"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -492,20 +512,143 @@ function linkedCustomerOrdersLabel(count: number) {
               >
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
               </svg>
+              <span
+                class="product-filter-popover-trigger__badge"
+                data-order-filter-popover-badge
+                hidden={!hasActiveFilters}
+              >
+                {activeFilterCount}
+              </span>
             </button>
-            <button
-              type="button"
-              class="product-filter-form__icon-trigger order-management-toolbar__document-modal-trigger"
-              data-order-document-modal-trigger
-              data-open-dashboard-modal="order-documents-modal"
-              aria-label="Document options for selected orders"
-              aria-controls="order-documents-modal"
-              disabled
+
+            <div
+              class="product-filter-popover"
+              data-order-filter-popover
+              role="dialog"
+              aria-label="Filter orders"
+              hidden
             >
+              <header class="product-filter-popover__header">
+                <div class="product-filter-popover__heading">
+                  <h3 class="product-filter-popover__title">Filter orders</h3>
+                  <p class="product-filter-popover__description">
+                    Narrow orders by source, status, and payment.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  class="product-filter-popover__close"
+                  data-order-filter-popover-close
+                  aria-label="Close filters"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.25"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </header>
+
+              <div class="product-filter-popover__body">
+                <label class="product-filter-popover__field">
+                  <span class="product-filter-popover__label">Source</span>
+                  <select
+                    name="source"
+                    data-order-filter-field="source"
+                    aria-label="Filter by source"
+                  >
+                    <option value="">All sources</option>
+                    {
+                      orderSources.map((source) => (
+                        <option
+                          value={source}
+                          selected={activeFilters.source === source}
+                        >
+                          {formatOrderSource(source)}
+                        </option>
+                      ))
+                    }
+                  </select>
+                </label>
+
+                <label class="product-filter-popover__field">
+                  <span class="product-filter-popover__label">Order status</span>
+                  <select
+                    name="orderStatus"
+                    data-order-filter-field="orderStatus"
+                    aria-label="Filter by order status"
+                  >
+                    <option value="">All order statuses</option>
+                    {
+                      orderStatuses.map((status) => (
+                        <option
+                          value={status}
+                          selected={activeFilters.orderStatus === status}
+                        >
+                          {autoCapitalize(status)}
+                        </option>
+                      ))
+                    }
+                  </select>
+                </label>
+
+                <label class="product-filter-popover__field">
+                  <span class="product-filter-popover__label">Payment status</span>
+                  <select
+                    name="paymentStatus"
+                    data-order-filter-field="paymentStatus"
+                    aria-label="Filter by payment status"
+                  >
+                    <option value="">All payment statuses</option>
+                    {
+                      paymentStatuses.map((status) => (
+                        <option
+                          value={status}
+                          selected={activeFilters.paymentStatus === status}
+                        >
+                          {autoCapitalize(status)}
+                        </option>
+                      ))
+                    }
+                  </select>
+                </label>
+              </div>
+
+              <footer class="product-filter-popover__footer">
+                <button
+                  type="button"
+                  class="product-filter-popover__clear"
+                  data-order-filter-popover-clear
+                >
+                  Clear
+                </button>
+              </footer>
+            </div>
+          </div>
+
+          <ActionMenu
+            id="admin-orders-document-menu"
+            menuLabel="Document options for selected orders"
+            triggerLabel="Document"
+            triggerClass="order-management-toolbar__document-menu"
+            disabled
+            items={orderDocumentMenuItems}
+          >
+            <Fragment slot="trigger">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -520,97 +663,37 @@ function linkedCustomerOrdersLabel(count: number) {
                 <line x1="16" y1="17" x2="8" y2="17"></line>
                 <polyline points="10 9 9 9 8 9"></polyline>
               </svg>
-            </button>
-            <button
-              type="button"
-              class="product-filter-form__icon-trigger product-filter-form__create-trigger"
-              data-open-create-sheet
-              data-sheet-target="#create-order-sheet"
-              aria-label="Create order"
-              disabled={!canCreateOrder}
+              <span class="order-management-toolbar__document-menu-text">Document</span>
+            </Fragment>
+          </ActionMenu>
+
+          <button
+            type="button"
+            class="order-management-toolbar__create"
+            data-open-create-sheet
+            data-sheet-target="#create-order-sheet"
+            aria-label="Create order"
+            disabled={!canCreateOrder}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-            </button>
-          </div>
-        </div>
-        <div class="product-filter-form__advanced-filters">
-          <div class="order-filter-form__field">
-            <select
-              name="source"
-              data-order-filter-field="source"
-              aria-label="Filter by source"
-            >
-              <option value="">All sources</option>
-              {orderSources.map((source) => (
-                <option value={source} selected={activeFilters.source === source}>
-                  {formatOrderSource(source)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div class="order-filter-form__field">
-            <select
-              name="orderStatus"
-              data-order-filter-field="orderStatus"
-              aria-label="Filter by order status"
-            >
-              <option value="">All order statuses</option>
-              {orderStatuses.map((status) => (
-                <option value={status} selected={activeFilters.orderStatus === status}>
-                  {autoCapitalize(status)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div class="order-filter-form__field">
-            <select
-              name="paymentStatus"
-              data-order-filter-field="paymentStatus"
-              aria-label="Filter by payment status"
-            >
-              <option value="">All payment statuses</option>
-              {paymentStatuses.map((status) => (
-                <option value={status} selected={activeFilters.paymentStatus === status}>
-                  {autoCapitalize(status)}
-                </option>
-              ))}
-            </select>
-          </div>
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span class="order-management-toolbar__create-text">Create Order</span>
+          </button>
         </div>
       </form>
-      <div class="order-management-toolbar__actions">
-        <ActionMenu
-          id="admin-orders-document-menu"
-          menuLabel="Document options for selected orders"
-          triggerLabel="Document"
-          triggerClass="order-management-toolbar__document-menu"
-          disabled
-          items={orderDocumentMenuItems}
-        />
-        <Button
-          type="button"
-          class="order-management-toolbar__create"
-          data-open-create-sheet
-          data-sheet-target="#create-order-sheet"
-          disabled={!canCreateOrder}
-        >
-          Create Order
-        </Button>
-      </div>
     </div>
 
     {!canCreateOrder && (
@@ -638,14 +721,38 @@ function linkedCustomerOrdersLabel(count: number) {
                   <input type="checkbox" data-order-select-all />
                 </label>
               </th>
-              <th scope="col">Date Created</th>
+              <AdminProductSortHeader
+                column="created_at"
+                label="Date Created"
+                sortScope="order"
+                activeSort={activeFilters.sort}
+                activeDirection={activeFilters.direction}
+              />
               <th scope="col">Order ID</th>
-              <th scope="col">Customer</th>
+              <AdminProductSortHeader
+                column="customer_label"
+                label="Customer"
+                sortScope="order"
+                activeSort={activeFilters.sort}
+                activeDirection={activeFilters.direction}
+              />
               <th scope="col">Source</th>
               <th scope="col">Order Status</th>
               <th scope="col">Payment Status</th>
-              <th scope="col">Order Total</th>
-              <th scope="col">Remaining Receivable</th>
+              <AdminProductSortHeader
+                column="order_total"
+                label="Order Total"
+                sortScope="order"
+                activeSort={activeFilters.sort}
+                activeDirection={activeFilters.direction}
+              />
+              <AdminProductSortHeader
+                column="remaining_receivable"
+                label="Remaining Receivable"
+                sortScope="order"
+                activeSort={activeFilters.sort}
+                activeDirection={activeFilters.direction}
+              />
               <DashboardTableActionsHeader />
             </tr>
           </thead>
@@ -762,14 +869,38 @@ function linkedCustomerOrdersLabel(count: number) {
             <th scope="col" class="dashboard-table__select-column">
               <span class="table-skeleton-block table-skeleton-block--short"></span>
             </th>
-            <th scope="col">Date Created</th>
+            <AdminProductSortHeader
+              column="created_at"
+              label="Date Created"
+              sortScope="order"
+              activeSort={activeFilters.sort}
+              activeDirection={activeFilters.direction}
+            />
             <th scope="col">Order ID</th>
-            <th scope="col">Customer</th>
+            <AdminProductSortHeader
+              column="customer_label"
+              label="Customer"
+              sortScope="order"
+              activeSort={activeFilters.sort}
+              activeDirection={activeFilters.direction}
+            />
             <th scope="col">Source</th>
             <th scope="col">Order Status</th>
             <th scope="col">Payment Status</th>
-            <th scope="col">Order Total</th>
-            <th scope="col">Remaining Receivable</th>
+            <AdminProductSortHeader
+              column="order_total"
+              label="Order Total"
+              sortScope="order"
+              activeSort={activeFilters.sort}
+              activeDirection={activeFilters.direction}
+            />
+            <AdminProductSortHeader
+              column="remaining_receivable"
+              label="Remaining Receivable"
+              sortScope="order"
+              activeSort={activeFilters.sort}
+              activeDirection={activeFilters.direction}
+            />
             <DashboardTableActionsHeader />
           </tr>
         </thead>
@@ -818,70 +949,14 @@ function linkedCustomerOrdersLabel(count: number) {
     </div>
   </Modal>
 
-  <Modal
-    id="order-filters-modal"
-    title="Filter orders"
-    description="Narrow orders by source, status, and payment."
-  >
-    <div class="product-filter-modal">
-      <label class="product-filter-modal__field">
-        <span class="product-filter-modal__label">Source</span>
-        <select data-order-filter-field="source" aria-label="Filter by source">
-          <option value="">All sources</option>
-          {orderSources.map((source) => (
-            <option value={source} selected={activeFilters.source === source}>
-              {formatOrderSource(source)}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label class="product-filter-modal__field">
-        <span class="product-filter-modal__label">Order status</span>
-        <select data-order-filter-field="orderStatus" aria-label="Filter by order status">
-          <option value="">All order statuses</option>
-          {orderStatuses.map((status) => (
-            <option value={status} selected={activeFilters.orderStatus === status}>
-              {autoCapitalize(status)}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label class="product-filter-modal__field">
-        <span class="product-filter-modal__label">Payment status</span>
-        <select data-order-filter-field="paymentStatus" aria-label="Filter by payment status">
-          <option value="">All payment statuses</option>
-          {paymentStatuses.map((status) => (
-            <option value={status} selected={activeFilters.paymentStatus === status}>
-              {autoCapitalize(status)}
-            </option>
-          ))}
-        </select>
-      </label>
-      <div class="product-filter-modal__actions">
-        <button
-          type="button"
-          class="product-filter-modal__clear"
-          data-order-filter-modal-clear
-        >
-          Clear
-        </button>
-        <button
-          type="button"
-          class="product-filter-modal__apply"
-          data-order-filter-modal-apply
-        >
-          Apply filters
-        </button>
-      </div>
-    </div>
-  </Modal>
 </section>
 
 <script>
   import { initAdminCreateOrderSheet } from "@/lib/client/admin-create-order-sheet";
   import { initAdminOrderBulkPdf } from "@/lib/client/admin-order-bulk-pdf";
+  import { initAdminOrderSort } from "@/lib/client/admin-order-sort";
   import { initAdminOrdersFragmentTable } from "@/lib/client/admin-orders-fragment-table";
-  import { initDashboardFilterModals } from "@/lib/client/dashboard-filter-modal";
+  import { initOrderFilterPopover } from "@/lib/client/order-filter-popover";
 
   function bootCreateOrderSheet() {
     initAdminCreateOrderSheet();
@@ -895,8 +970,9 @@ function linkedCustomerOrdersLabel(count: number) {
   }
 
   function initAdminOrderFilters() {
-    initDashboardFilterModals();
+    initOrderFilterPopover();
     initAdminOrdersFragmentTable();
+    initAdminOrderSort();
   }
 
   document.addEventListener("DOMContentLoaded", initAdminOrderFilters);

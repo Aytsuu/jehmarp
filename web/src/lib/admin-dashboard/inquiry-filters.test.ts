@@ -24,4 +24,34 @@ describe("serializeAdminInquiryFilters", () => {
       }),
     ).toBe("search=Ana&status=closed");
   });
+
+  it("serializes a supported sort after the other filters", () => {
+    expect(
+      serializeAdminInquiryFilters({
+        status: "new",
+        sort: "name",
+        direction: "asc",
+      }),
+    ).toBe("status=new&sort=name&direction=asc");
+  });
+});
+
+describe("inquiry sort filters", () => {
+  it("accepts inquiry columns and asc or desc", () => {
+    expect(
+      parseAdminInquiryFilters(new URL("https://example.test/admin/inquiries?sort=created_at&direction=desc")),
+    ).toEqual({ sort: "created_at", direction: "desc" });
+    expect(
+      parseAdminInquiryFilters(new URL("https://example.test/admin/inquiries?sort=name&direction=asc")),
+    ).toEqual({ sort: "name", direction: "asc" });
+  });
+
+  it("ignores an unknown column or direction", () => {
+    expect(
+      parseAdminInquiryFilters(new URL("https://example.test/admin/inquiries?sort=email&direction=asc")),
+    ).toEqual({});
+    expect(
+      parseAdminInquiryFilters(new URL("https://example.test/admin/inquiries?sort=name&direction=sideways")),
+    ).toEqual({});
+  });
 });

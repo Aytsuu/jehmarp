@@ -138,6 +138,8 @@ describe("loadAdminDashboardData", () => {
     expect(from).toHaveBeenNthCalledWith(1, "product");
     expect(productBuilder.or).toHaveBeenCalledWith("name.ilike.%belly%,description.ilike.%belly%");
     expect(productBuilder.select).toHaveBeenCalledWith(expect.any(String), { count: "exact" });
+    expect(productBuilder.order).toHaveBeenNthCalledWith(1, "is_active", { ascending: false });
+    expect(productBuilder.order).toHaveBeenNthCalledWith(2, "name", { ascending: true });
     expect(productBuilder.range).toHaveBeenCalledWith(0, 9);
     expect(result).toEqual({
       products: [],
@@ -150,6 +152,51 @@ describe("loadAdminDashboardData", () => {
         toRow: 10,
       },
     });
+  });
+
+  it("sorts the product page in the database by the requested column", async () => {
+    const productBuilder = createQueryBuilder({ data: [], error: null, count: 0 });
+    const from = vi.fn(() => productBuilder);
+    createSupabaseAdminClient.mockReturnValue({ from });
+    const { loadAdminProductManagementData } = await import("./data");
+
+    await loadAdminProductManagementData({
+      sort: "default_price",
+      direction: "asc",
+    });
+
+    expect(productBuilder.order).toHaveBeenNthCalledWith(1, "default_price", { ascending: true });
+    expect(productBuilder.order).toHaveBeenNthCalledWith(2, "id", { ascending: true });
+  });
+
+  it("marks products that are already on an order", async () => {
+    const productId = "4f65578f-3f1f-4216-9fc2-013ef06661d1";
+    const productBuilder = createQueryBuilder({
+      data: [{ id: productId, name: "Pork Belly" }],
+      error: null,
+      count: 1,
+    });
+    const orderItemBuilder = createQueryBuilder({
+      data: [{ product_id: productId }],
+      error: null,
+    });
+    const from = vi.fn((table: string) => (
+      table === "order_item" ? orderItemBuilder : productBuilder
+    ));
+    createSupabaseAdminClient.mockReturnValue({ from });
+    const { loadAdminProductManagementData } = await import("./data");
+
+    const result = await loadAdminProductManagementData();
+
+    expect(from).toHaveBeenCalledWith("order_item");
+    expect(orderItemBuilder.in).toHaveBeenCalledWith("product_id", [productId]);
+    expect(result.products).toEqual([
+      {
+        id: productId,
+        name: "Pork Belly",
+        referencedByOrder: true,
+      },
+    ]);
   });
 
   it("applies direct admin order filters to the database query", async () => {
@@ -216,6 +263,8 @@ describe("loadAdminDashboardData", () => {
       payment_status_filter: "partial",
       page_number: 1,
       page_size: 10,
+      sort_column: null,
+      sort_direction: null,
     });
     expect(result.orderRows).toEqual([{
       ...orderRow,
@@ -227,6 +276,22 @@ describe("loadAdminDashboardData", () => {
       pending_customer_order_count: null,
     }]);
     expect(result.pagination.totalRows).toBe(1);
+
+    await loadAdminOrderManagementData({
+      sort: "order_total",
+      direction: "asc",
+    });
+
+    expect(rpc).toHaveBeenLastCalledWith("list_admin_order_rows", {
+      search_query: null,
+      source_filter: null,
+      order_status_filter: null,
+      payment_status_filter: null,
+      page_number: 1,
+      page_size: 10,
+      sort_column: "order_total",
+      sort_direction: "asc",
+    });
   });
 
   it("loads admin sales rows through the paginated sales RPC", async () => {
@@ -268,6 +333,8 @@ describe("loadAdminDashboardData", () => {
       payment_status_filter: "paid",
       page_number: 1,
       page_size: 10,
+      sort_column: null,
+      sort_direction: null,
     });
     expect(result.salesRows).toEqual([{
       ...salesRow,
@@ -278,6 +345,22 @@ describe("loadAdminDashboardData", () => {
       payment_count: 1,
     }]);
     expect(result.pagination.totalRows).toBe(1);
+
+    await loadAdminSalesManagementData({
+      sort: "net_total",
+      direction: "asc",
+    });
+
+    expect(rpc).toHaveBeenLastCalledWith("list_admin_sales_rows", {
+      search_query: null,
+      source_filter: null,
+      order_status_filter: null,
+      payment_status_filter: null,
+      page_number: 1,
+      page_size: 10,
+      sort_column: "net_total",
+      sort_direction: "asc",
+    });
   });
 
   it("does not replace a missing admin sales date with the order date", async () => {
@@ -339,6 +422,8 @@ describe("loadAdminDashboardData", () => {
       balance_status_filter: "partial",
       page_number: 1,
       page_size: 10,
+      sort_column: null,
+      sort_direction: null,
     });
     expect(result.invoiceRows).toEqual([{
       ...invoiceRow,
@@ -347,6 +432,20 @@ describe("loadAdminDashboardData", () => {
       balance: 800,
     }]);
     expect(result.pagination.totalRows).toBe(1);
+
+    await loadAdminInvoiceManagementData({
+      sort: "balance",
+      direction: "desc",
+    });
+
+    expect(rpc).toHaveBeenLastCalledWith("list_admin_invoice_rows", {
+      search_query: null,
+      balance_status_filter: null,
+      page_number: 1,
+      page_size: 10,
+      sort_column: "balance",
+      sort_direction: "desc",
+    });
   });
 
   it("loads admin customer rows through the paginated customer RPC", async () => {
@@ -385,12 +484,28 @@ describe("loadAdminDashboardData", () => {
       customer_type_filter: "reseller",
       page_number: 1,
       page_size: 10,
+      sort_column: null,
+      sort_direction: null,
     });
     expect(from).toHaveBeenCalledWith("agent");
     expect(result.customers).toEqual([customerRow]);
     expect(result.agents).toEqual([]);
     expect(result.defaultCustomerCreditLimit).toBe(1000);
     expect(result.pagination.totalRows).toBe(1);
+
+    await loadAdminCustomerManagementData({
+      sort: "customer_name",
+      direction: "asc",
+    });
+
+    expect(rpc).toHaveBeenLastCalledWith("list_admin_customer_rows", {
+      search_query: null,
+      customer_type_filter: null,
+      page_number: 1,
+      page_size: 10,
+      sort_column: "customer_name",
+      sort_direction: "asc",
+    });
   });
 
   it("filters promoted customers out of direct admin customer loads", async () => {
@@ -437,9 +552,25 @@ describe("loadAdminDashboardData", () => {
       status_filter: "active",
       page_number: 1,
       page_size: 10,
+      sort_column: null,
+      sort_direction: null,
     });
     expect(result.agents.map((agent) => agent.id)).toEqual(["agent-1"]);
     expect(result.pagination.totalRows).toBe(1);
+
+    await loadAdminAgentManagementData({
+      sort: "display_name",
+      direction: "asc",
+    });
+
+    expect(rpc).toHaveBeenLastCalledWith("list_admin_agent_rows", {
+      search_query: null,
+      status_filter: null,
+      page_number: 1,
+      page_size: 10,
+      sort_column: "display_name",
+      sort_direction: "asc",
+    });
   });
 
   it("separates assigned-customer balance from an agent's own customer balance on agent details", async () => {
@@ -886,8 +1017,17 @@ describe("loadAdminDashboardData", () => {
     );
     expect(resellerBuilder.eq).toHaveBeenCalledWith("application_status", "submitted");
     expect(resellerBuilder.range).toHaveBeenCalledWith(0, 9);
+    expect(resellerBuilder.order).toHaveBeenCalledWith("created_at", { ascending: false });
     expect(result.resellerApplications.map((application) => application.id)).toEqual(["application-1"]);
     expect(result.pagination?.totalRows).toBe(1);
+
+    await loadAdminResellerApplicationManagementData({
+      sort: "name",
+      direction: "asc",
+    });
+
+    expect(resellerBuilder.order).toHaveBeenCalledWith("name", { ascending: true });
+    expect(resellerBuilder.order).toHaveBeenCalledWith("id", { ascending: true });
   });
 
   it("applies inquiry filters and pagination to the database query", async () => {
@@ -926,8 +1066,17 @@ describe("loadAdminDashboardData", () => {
     );
     expect(inquiryBuilder.eq).toHaveBeenCalledWith("inquiry_status", "reviewing");
     expect(inquiryBuilder.range).toHaveBeenCalledWith(0, 9);
+    expect(inquiryBuilder.order).toHaveBeenCalledWith("created_at", { ascending: false });
     expect(result.contactInquiries.map((inquiry) => inquiry.id)).toEqual(["inquiry-1"]);
     expect(result.pagination?.totalRows).toBe(1);
+
+    await loadAdminInquiryManagementData({
+      sort: "name",
+      direction: "desc",
+    });
+
+    expect(inquiryBuilder.order).toHaveBeenCalledWith("name", { ascending: false });
+    expect(inquiryBuilder.order).toHaveBeenCalledWith("id", { ascending: false });
   });
 
   it("normalizes nullable order child relations to empty arrays", async () => {

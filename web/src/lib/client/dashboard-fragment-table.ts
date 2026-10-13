@@ -41,6 +41,32 @@ function getSkeletonTemplate(config: DashboardFragmentTableConfig) {
   return document.querySelector<HTMLTemplateElement>(config.skeletonTemplateSelector);
 }
 
+function readTableBoardScroll(tableShell: HTMLElement) {
+  const board = tableShell.querySelector<HTMLElement>(".dashboard-table-board");
+
+  return {
+    left: board?.scrollLeft ?? 0,
+    top: board?.scrollTop ?? 0,
+  };
+}
+
+function restoreTableBoardScroll(
+  tableShell: HTMLElement,
+  scroll: { left: number; top: number },
+) {
+  const board = tableShell.querySelector<HTMLElement>(".dashboard-table-board");
+  if (!board || (scroll.left === 0 && scroll.top === 0)) return;
+
+  const apply = () => {
+    if (!board.isConnected) return;
+    board.scrollLeft = scroll.left;
+    board.scrollTop = scroll.top;
+  };
+
+  apply();
+  requestAnimationFrame(apply);
+}
+
 function resolveConfigForElement(element: Element) {
   for (const config of fragmentTableConfigs.values()) {
     const container = getContainer(config);
@@ -156,7 +182,11 @@ function showSkeletonForQuery(config: DashboardFragmentTableConfig, targetQuery:
   if (targetQuery === currentQuery || cachedFragment) return;
 
   const skeleton = skeletonTemplate.content.firstElementChild?.cloneNode(true);
-  if (skeleton) tableShell.replaceChildren(skeleton);
+  if (!skeleton) return;
+
+  const scroll = readTableBoardScroll(tableShell);
+  tableShell.replaceChildren(skeleton);
+  restoreTableBoardScroll(tableShell, scroll);
 }
 
 function replaceFragment(config: DashboardFragmentTableConfig, fragmentHtml: string) {
@@ -175,6 +205,7 @@ function replaceFragment(config: DashboardFragmentTableConfig, fragmentHtml: str
     throw new Error("Dashboard fragment did not include the expected table.");
   }
 
+  const scroll = readTableBoardScroll(tableShell);
   tableShell.innerHTML = nextTableShell.innerHTML;
   if (nextFooter && currentFooter) {
     currentFooter.innerHTML = nextFooter.innerHTML;
@@ -182,6 +213,7 @@ function replaceFragment(config: DashboardFragmentTableConfig, fragmentHtml: str
   }
 
   document.dispatchEvent(new Event("dashboard:interactive-table-updated"));
+  restoreTableBoardScroll(tableShell, scroll);
   config.updatedEvents?.forEach((eventName) => {
     document.dispatchEvent(new Event(eventName));
   });
@@ -405,6 +437,15 @@ function bindFragmentTableDelegation() {
     const page = Number(button.dataset.page ?? "1");
     navigateToPage(config, Number.isInteger(page) && page > 0 ? page : 1);
   }, delegationOptions);
+}
+
+export function applyDashboardFragmentFormFilters(form: HTMLFormElement) {
+  for (const config of fragmentTableConfigs.values()) {
+    if (!form.matches(config.formSelector)) continue;
+
+    void applyQuery(config, normalizeFormQuery(config, { page: 1 }));
+    return;
+  }
 }
 
 export function initDashboardFragmentTable(config: DashboardFragmentTableConfig) {
