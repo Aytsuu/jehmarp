@@ -22,7 +22,10 @@ import {
 } from "@/lib/public-website/home-faq";
 import MissionExpandableText from "@/components/MissionExpandableText.astro";
 import { toAdminContentPreviewHref } from "@/lib/public-website/admin-content-preview";
-import { resolvePublicStorageUrl } from "@/lib/supabase/storage";
+import {
+  buildHomeBestSellers,
+  buildHomeFeaturedProducts,
+} from "@/lib/public-website/home-product-lists";
 
 type Props = {
   sections: PublicPageSectionRecord[];
@@ -127,99 +130,8 @@ function coreValuesContent(value: unknown): string | undefined {
   return items.length > 0 ? items.join(" ") : undefined;
 }
 
-function getProductImage(name: string): string {
-  const normalized = name.toLowerCase();
-  if (normalized.includes("pork belly")) return "/images/pork_belly.png";
-  if (normalized.includes("chicken breast"))
-    return "/images/chicken_breast.png";
-  if (normalized.includes("short ribs") || normalized.includes("beef"))
-    return "/images/beef_short_ribs.png";
-  if (normalized.includes("ground pork")) return "/images/ground_pork.png";
-  return "/images/meat_cluster.svg";
-}
-
-function getFeaturedProductImage(product: PublicFeaturedProduct): string {
-  return (
-    resolvePublicStorageUrl(product.image_path) ?? getProductImage(product.name)
-  );
-}
-
-const defaultBestSellers = [
-  {
-    id: "best-1",
-    name: "Pork Belly Prime Cut",
-    price: "₱380.00",
-    image: "/images/pork_belly.png",
-    description:
-      "Freshly cut pork belly with ideal fat-to-meat ratio, perfect for grilling or crisp roasting.",
-    badge: null,
-    availability: "Freshly packed daily",
-  },
-  {
-    id: "best-2",
-    name: "Chicken Breast (Skinless)",
-    price: "₱240.00",
-    image: "/images/chicken_breast.png",
-    description:
-      "Lean, tender chicken breast prepared fresh daily, ideal for healthy home meals.",
-    badge: null,
-    availability: "Freshly packed daily",
-  },
-  {
-    id: "best-3",
-    name: "Beef Short Ribs",
-    price: "From ₱420.00",
-    image: "/images/beef_short_ribs.png",
-    description:
-      "Richly marbled beef short ribs cut for slow stewing, braising, or smoking.",
-    badge: "SOLD OUT",
-    availability: "Out of stock",
-  },
-  {
-    id: "best-4",
-    name: "Special Ground Pork",
-    price: "₱260.00",
-    image: "/images/ground_pork.png",
-    description:
-      "Freshly ground pork prepared from lean cuts, perfect for lumpia, patties, and sauces.",
-    badge: null,
-    availability: "Freshly packed daily",
-  },
-];
-
-const bestSellersList = defaultBestSellers.map((defaultItem, index) => {
-  const dbProduct = featuredProducts[index];
-  if (dbProduct) {
-    return {
-      id: dbProduct.id,
-      name: dbProduct.name,
-      price: defaultItem.price,
-      image: getFeaturedProductImage(dbProduct),
-      description: dbProduct.description ?? defaultItem.description,
-      badge: defaultItem.badge,
-      availability: defaultItem.availability,
-    };
-  }
-  return defaultItem;
-});
-
-const featuredProductsList =
-  featuredProducts.length > 0
-    ? featuredProducts.map((prod, i) => ({
-        id: prod.id,
-        name: prod.name,
-        price: defaultBestSellers[i]?.price ?? "₱250.00",
-        image: getFeaturedProductImage(prod),
-        description:
-          prod.description ??
-          defaultBestSellers[i]?.description ??
-          "Fresh local cut prepared daily.",
-        category_name: "Fresh Cut",
-      }))
-    : defaultBestSellers.map((item) => ({
-        ...item,
-        category_name: "Fresh Cut",
-      }));
+const bestSellersList = buildHomeBestSellers(featuredProducts);
+const featuredProductsList = buildHomeFeaturedProducts(featuredProducts);
 
 ---
 
@@ -631,7 +543,9 @@ const featuredProductsList =
           </p>
         </div>
 
-        <div class="best-sellers__grid">
+        {
+          bestSellersList.length > 0 ? (
+            <div class="best-sellers__grid">
           {
             bestSellersList.map((product) => (
               <article class="best-seller-card">
@@ -658,7 +572,16 @@ const featuredProductsList =
               </article>
             ))
           }
-        </div>
+            </div>
+          ) : (
+            <div class="home-catalog-empty">
+              <p class="home-catalog-empty__title">No best sellers yet</p>
+              <p class="home-catalog-empty__message">
+                Fresh cuts will show up here once products are available in the shop.
+              </p>
+            </div>
+          )
+        }
 
         <div class="best-sellers__action">
           <a href={linkHref("/shop")} class="best-sellers__button">
@@ -721,7 +644,9 @@ const featuredProductsList =
                 </a>
               </div>
 
-              <div class="featured-products__grid">
+              {
+                featuredProductsList.length > 0 ? (
+                  <div class="featured-products__grid">
                 {featuredProductsList.map((product) => (
                   <article class="featured-product-card">
                     <div class="featured-product-card__image-container">
@@ -758,7 +683,16 @@ const featuredProductsList =
                     </div>
                   </article>
                 ))}
-              </div>
+                  </div>
+                ) : (
+                  <div class="home-catalog-empty">
+                    <p class="home-catalog-empty__title">No featured products yet</p>
+                    <p class="home-catalog-empty__message">
+                      Handpicked cuts will appear here when the shop has products ready.
+                    </p>
+                  </div>
+                )
+              }
             </section>
           </div>
         </div>
