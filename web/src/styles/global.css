@@ -2074,12 +2074,22 @@
 
   [data-admin-products-page] .product-filter-form {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
     gap: 0.5rem;
     flex: 1 1 auto;
     width: 100%;
     max-width: none;
     min-width: 0;
+  }
+
+  [data-admin-products-page] .product-selection-delete {
+    align-self: flex-start;
+    width: auto;
+    height: auto;
+    min-height: 0;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
   }
 
   [data-admin-products-page] .dashboard-interactive-table>.product-management-toolbar .product-filter-form {
@@ -2569,27 +2579,6 @@
       min-width: 1.25rem !important;
       min-height: 1.25rem !important;
       stroke-width: 2.5;
-    }
-
-    [data-admin-products-page] .product-selection-delete {
-      padding: 0 !important;
-      width: 2.35rem !important;
-      min-width: 2.35rem !important;
-      max-width: 2.35rem !important;
-      height: 2.35rem !important;
-      justify-content: center;
-    }
-
-    [data-admin-products-page] .product-selection-delete__text {
-      display: none !important;
-    }
-
-    [data-admin-products-page] .product-selection-delete svg {
-      width: 1.15rem !important;
-      height: 1.15rem !important;
-      min-width: 1.15rem !important;
-      min-height: 1.15rem !important;
-      flex-shrink: 0;
     }
 
     [data-admin-orders-page] .order-management-toolbar__document-menu {
