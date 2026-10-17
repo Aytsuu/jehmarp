@@ -154,6 +154,7 @@ vite.config.ts.timestamp-*
 contexts
 .mcp.json
 /AGENTS.md
+dev-output
 
 # deployment
 .astro
