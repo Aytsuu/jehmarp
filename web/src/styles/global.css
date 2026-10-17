@@ -7466,6 +7466,31 @@
     margin: 0;
   }
 
+  .home-catalog-empty {
+    margin: 0;
+    padding: 2.75rem 1.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    background-color: #f9fafb;
+    text-align: center;
+  }
+
+  .home-catalog-empty__title {
+    margin: 0 0 0.4rem;
+    color: #111827;
+    font-size: 1.125rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .home-catalog-empty__message {
+    margin: 0 auto;
+    max-width: 32rem;
+    color: #4b5563;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
   .best-sellers__grid {
     display: grid;
     grid-template-columns: 1fr;
