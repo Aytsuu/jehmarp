@@ -62,7 +62,10 @@ export function serializeAdminOrderFilters(filters: AdminOrderFilters): string {
   return params.toString();
 }
 
-function optionalOrderSort(sort: string | null, direction: string | null) {
+function optionalOrderSort(
+  sort: string | null,
+  direction: string | null,
+): { sort: AdminOrderSortColumn; direction: AdminOrderSortDirection } | Record<string, never> {
   const normalizedSort = sort?.trim();
   const normalizedDirection = direction?.trim();
   if (!isAdminOrderSortColumn(normalizedSort)) {
@@ -75,7 +78,7 @@ function optionalOrderSort(sort: string | null, direction: string | null) {
 
   return {
     sort: normalizedSort,
-    direction: normalizedDirection,
+    direction: normalizedDirection === "asc" ? "asc" : "desc",
   };
 }
 

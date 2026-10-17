@@ -146,7 +146,6 @@ describe("dashboard-filter-popover", () => {
 
     const customerTrigger = document.querySelector<HTMLElement>("[data-customer-filter-popover-trigger]")!;
     const customerPopover = document.querySelector<HTMLElement>("[data-customer-filter-popover]")!;
-    const customerField = document.querySelector<HTMLSelectElement>('[data-customer-filter-field="customerType"]')!;
 
     // Open sales popover via trigger click
     salesTrigger.click();

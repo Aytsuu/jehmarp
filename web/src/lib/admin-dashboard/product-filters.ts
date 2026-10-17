@@ -57,7 +57,10 @@ function optionalCategoryFilter(value: string | null) {
   return normalized ? { category: normalized } : {};
 }
 
-function optionalProductSort(sort: string | null, direction: string | null) {
+function optionalProductSort(
+  sort: string | null,
+  direction: string | null,
+): { sort: AdminProductSortColumn; direction: AdminProductSortDirection } | Record<string, never> {
   const normalizedSort = sort?.trim();
   const normalizedDirection = direction?.trim();
   if (!isAdminProductSortColumn(normalizedSort)) {
@@ -70,7 +73,7 @@ function optionalProductSort(sort: string | null, direction: string | null) {
 
   return {
     sort: normalizedSort,
-    direction: normalizedDirection,
+    direction: normalizedDirection === "asc" ? "asc" : "desc",
   };
 }
 
