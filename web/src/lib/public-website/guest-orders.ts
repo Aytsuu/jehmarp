@@ -80,10 +80,11 @@ export function parseGuestOrderFormData(
   });
   const itemResult = parseOrderItems(formData);
   const turnstileToken = String(formData.get("cf-turnstile-response") ?? "").trim();
+  const turnstileDisabled = getServerEnv().turnstileDisabled === true;
   const errors = [
     ...(customerResult.success ? [] : flattenZodErrors(customerResult.error)),
     ...itemResult.errors,
-    ...(turnstileToken === "" ? ["Please complete the verification challenge."] : []),
+    ...(!turnstileDisabled && turnstileToken === "" ? ["Please complete the verification challenge."] : []),
   ];
   const privacyAckError = validatePrivacyNoticeAcknowledgement(
     formData,
@@ -119,10 +120,12 @@ export async function submitGuestOrder(
   const env = getServerEnv();
   const fetcher = options.fetch ?? fetch;
 
-  await verifyTurnstileToken(env.turnstileSecretKey, payload.turnstileToken, {
-    fetch: fetcher,
-    clientIp: options.clientIp,
-  });
+  if (!env.turnstileDisabled) {
+    await verifyTurnstileToken(env.turnstileSecretKey, payload.turnstileToken, {
+      fetch: fetcher,
+      clientIp: options.clientIp,
+    });
+  }
   await enforceGuestOrderRateLimit(fetcher, {
     redisUrl: env.upstashRedisRestUrl,
     redisToken: env.upstashRedisRestToken,

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { getServerEnv } from "@/lib/env";
+import { getServerEnv, turnstileFormToken } from "@/lib/env";
 import { assertEdgeFunctionSuccess } from "@/lib/public-website/edge-function-response";
 import { verifyTurnstileToken } from "@/lib/public-website/turnstile";
 import { validatePrivacyNoticeAcknowledgement } from "@/lib/platform-settings/privacy-notice";
@@ -71,7 +71,7 @@ export function parseContactInquiryFormData(
     email: formData.get("email") ?? undefined,
     phoneNumber: formData.get("phoneNumber") ?? undefined,
     message: formData.get("message"),
-    turnstileToken: formData.get("cf-turnstile-response") ?? "",
+    turnstileToken: turnstileFormToken(formData.get("cf-turnstile-response")),
   });
 
   if (!result.success) {
@@ -102,10 +102,12 @@ export async function submitContactInquiry(
   const env = getServerEnv();
   const fetcher = options.fetch ?? fetch;
 
-  await verifyTurnstileToken(env.turnstileSecretKey, payload.turnstileToken, {
-    fetch: fetcher,
-    clientIp: options.clientIp,
-  });
+  if (!env.turnstileDisabled) {
+    await verifyTurnstileToken(env.turnstileSecretKey, payload.turnstileToken, {
+      fetch: fetcher,
+      clientIp: options.clientIp,
+    });
+  }
 
   const headers = new Headers({
     Authorization: `Bearer ${env.supabaseServerKey}`,

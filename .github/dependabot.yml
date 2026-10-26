@@ -1,4 +1,7 @@
 version: 2
+# Version updates open against dev. Security-update pull requests ignore
+# target-branch and always target the default branch, so those automated
+# pull requests are disabled in the repository security settings.
 updates:
   - package-ecosystem: npm
     directory: /web
