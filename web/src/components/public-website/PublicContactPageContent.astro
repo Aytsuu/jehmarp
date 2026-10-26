@@ -10,6 +10,7 @@ import {
 } from "@/lib/public-website/content";
 import { isLockedContactDetailsField } from "@/lib/platform-settings/contact-sync";
 import { isAdminContentPreviewPath } from "@/lib/public-website/admin-content-preview";
+import { getPublicEnv } from "@/lib/env";
 import type { AdminContentEditingContext } from "@/lib/public-website/admin-content-editing";
 import type { ContactInquiryFeedback } from "@/lib/public-website/contact-inquiries";
 
@@ -37,6 +38,7 @@ const disableFormSubmission = returnPath
   ? isAdminContentPreviewPath(returnPath)
   : false;
 const previewSubmissionTitle = "Submissions are disabled in content preview";
+const turnstileRequired = !getPublicEnv().turnstileDisabled;
 
 const detailsSection = content.sections.find((s) => s.type === "contact_details");
 const orderingSection = content.sections.find((s) => s.type === "ordering_note");
@@ -168,16 +170,16 @@ function getIconTypeFromLabel(label: string) {
           {
             turnstileSiteKey ? (
               <div class="cf-turnstile" data-sitekey={turnstileSiteKey} />
-            ) : (
+            ) : turnstileRequired ? (
               <p class="error-message">Contact verification is not configured.</p>
-            )
+            ) : null
           }
         </div>
 
         <div class="button-row">
           <button
             type="submit"
-            disabled={disableFormSubmission || !turnstileSiteKey}
+            disabled={disableFormSubmission || (turnstileRequired && !turnstileSiteKey)}
             title={disableFormSubmission ? previewSubmissionTitle : undefined}
           >
             Send inquiry

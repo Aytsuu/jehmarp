@@ -15,7 +15,8 @@ if (user) {
 }
 
 const errorMessage = getLoginErrorMessage(Astro.url.searchParams.get("error"));
-const { turnstileSiteKey } = getPublicEnv();
+const { turnstileSiteKey, turnstileDisabled } = getPublicEnv();
+const turnstileRequired = !turnstileDisabled;
 const settings = await loadPlatformSettings(createSupabaseAdminClient());
 const privacyContext = getPrivacyCollectionContext(settings);
 ---
@@ -73,27 +74,31 @@ const privacyContext = getPrivacyCollectionContext(settings);
           requireAcknowledgement={privacyContext.requireAcknowledgement}
         />
 
-        <div class="turnstile-container">
-          {
-            turnstileSiteKey ? (
-              <div class="cf-turnstile" data-sitekey={turnstileSiteKey} />
-            ) : (
-              <p class="error-message">Verification is not configured.</p>
-            )
-          }
-        </div>
+        {
+          turnstileRequired && (
+            <div class="turnstile-container">
+              {
+                turnstileSiteKey ? (
+                  <div class="cf-turnstile" data-sitekey={turnstileSiteKey} />
+                ) : (
+                  <p class="error-message">Verification is not configured.</p>
+                )
+              }
+            </div>
+          )
+        }
 
         <div
           class="button-row"
           style="margin-top: 1rem; justify-content: flex-start;"
         >
-          <button type="submit" disabled={!turnstileSiteKey}>Sign in</button>
+          <button type="submit" disabled={turnstileRequired && !turnstileSiteKey}>Sign in</button>
         </div>
       </form>
     </div>
 
     {
-      turnstileSiteKey && (
+      turnstileRequired && turnstileSiteKey && (
         <script
           is:inline
           src="https://challenges.cloudflare.com/turnstile/v0/api.js"

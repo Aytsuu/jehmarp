@@ -20,11 +20,13 @@ const publicEnvSchema = z
     PUBLIC_SUPABASE_URL: optionalStringEnv,
     PUBLIC_SUPABASE_PUBLISHABLE_KEY: optionalStringEnv,
     PUBLIC_TURNSTILE_SITE_KEY: optionalStringEnv,
+    TURNSTILE: optionalStringEnv,
     LOCAL_SUPABASE_URL: optionalStringEnv,
     LOCAL_SUPABASE_PUBLISHABLE_KEY: optionalStringEnv,
     LOCAL_SUPABASE_SECRET_KEY: optionalStringEnv,
     LOCAL_SUPABASE_SERVICE_ROLE_KEY: optionalStringEnv,
     DEV: z.boolean().optional(),
+    MODE: z.string().optional(),
     NODE_ENV: z.string().optional(),
   })
   .superRefine((value, context) => {
@@ -82,6 +84,7 @@ export type PublicEnv = {
   supabaseUrl: string;
   supabasePublishableKey: string;
   turnstileSiteKey?: string;
+  turnstileDisabled?: boolean;
 };
 
 export type ServerEnv = PublicEnv & {
@@ -111,14 +114,15 @@ export function parsePublicEnv(input: Record<string, unknown>): PublicEnv {
   return {
     supabaseUrl,
     supabasePublishableKey,
-    ...(result.data.PUBLIC_TURNSTILE_SITE_KEY
-      ? { turnstileSiteKey: result.data.PUBLIC_TURNSTILE_SITE_KEY }
-      : {}),
+    ...turnstileEnvFields(result.data),
   };
 }
 
 export function getPublicEnv(): PublicEnv {
-  return parsePublicEnv(import.meta.env);
+  return parsePublicEnv({
+    ...getProcessEnv(),
+    ...import.meta.env,
+  });
 }
 
 export function parseServerEnv(input: Record<string, unknown>): ServerEnv {
@@ -145,12 +149,7 @@ export function parseServerEnv(input: Record<string, unknown>): ServerEnv {
     supabaseUrl,
     supabasePublishableKey,
     supabaseServerKey,
-    ...(result.data.PUBLIC_TURNSTILE_SITE_KEY
-      ? { turnstileSiteKey: result.data.PUBLIC_TURNSTILE_SITE_KEY }
-      : {}),
-    ...(result.data.TURNSTILE_SECRET_KEY
-      ? { turnstileSecretKey: result.data.TURNSTILE_SECRET_KEY }
-      : {}),
+    ...turnstileEnvFields(result.data, result.data.TURNSTILE_SECRET_KEY),
     ...(result.data.RESEND_API_KEY ? { resendApiKey: result.data.RESEND_API_KEY } : {}),
     ...(result.data.RESELLER_PRICE_LIST_FROM
       ? { resellerPriceListFrom: result.data.RESELLER_PRICE_LIST_FROM }
@@ -169,6 +168,15 @@ export function parseServerEnv(input: Record<string, unknown>): ServerEnv {
 
 export function getServerEnv(): ServerEnv {
   return parseServerEnv(getRuntimeServerEnv());
+}
+
+export function turnstileFormToken(value: FormDataEntryValue | null): string {
+  const token = typeof value === "string" ? value.trim() : "";
+  if (token || !getServerEnv().turnstileDisabled) {
+    return token;
+  }
+
+  return "disabled";
 }
 
 export function getRuntimeServerEnv(): Record<string, unknown> {
@@ -193,4 +201,32 @@ function shouldUseLocalSupabase(input: Record<string, unknown>) {
     || input.DEV === "true"
     || input.NODE_ENV === "development"
   );
+}
+
+function isTurnstileDisabledInDev(input: {
+  MODE?: string;
+  TURNSTILE?: string;
+}) {
+  return input.MODE === "development"
+    && input.TURNSTILE?.trim().toLowerCase() === "disable";
+}
+
+function turnstileEnvFields(
+  input: {
+    MODE?: string;
+    TURNSTILE?: string;
+    PUBLIC_TURNSTILE_SITE_KEY?: string;
+  },
+  secretKey?: string,
+) {
+  if (isTurnstileDisabledInDev(input)) {
+    return { turnstileDisabled: true };
+  }
+
+  return {
+    ...(input.PUBLIC_TURNSTILE_SITE_KEY
+      ? { turnstileSiteKey: input.PUBLIC_TURNSTILE_SITE_KEY }
+      : {}),
+    ...(secretKey ? { turnstileSecretKey: secretKey } : {}),
+  };
 }

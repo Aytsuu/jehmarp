@@ -27,7 +27,7 @@ export const POST: APIRoute = async (context) => {
     return context.redirect(`/login?error=${encodeURIComponent(privacyAckError)}`, 303);
   }
 
-  if (env.turnstileSecretKey) {
+  if (!env.turnstileDisabled && env.turnstileSecretKey) {
     if (!turnstileToken) {
       return context.redirect("/login?error=Please%20complete%20the%20verification%20challenge.", 303);
     }

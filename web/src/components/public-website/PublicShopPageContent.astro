@@ -3,6 +3,7 @@ import FormSubmissionFeedback from "@/components/ui/FormSubmissionFeedback.astro
 import PrivacyCollectionNotice from "@/components/public-website/PrivacyCollectionNotice.astro";
 import { GUEST_ORDER_FEEDBACK_PARAMS } from "@/lib/client/form-submission-feedback-url";
 import { isAdminContentPreviewPath } from "@/lib/public-website/admin-content-preview";
+import { getPublicEnv } from "@/lib/env";
 import {
   applyShopFilters,
   SHOP_PAGE_SIZE,
@@ -89,10 +90,11 @@ const orderCatalog = catalogProducts.map((product) => ({
 const availableOrderProducts = catalogProducts.filter(
   (product) => product.stock_status !== "out_of_stock",
 );
+const turnstileRequired = !getPublicEnv().turnstileDisabled;
 const canSubmitOrder =
   !disableFormSubmission &&
   availableOrderProducts.length > 0 &&
-  Boolean(turnstileSiteKey);
+  (!turnstileRequired || Boolean(turnstileSiteKey));
 
 const orderSuccessMessage = orderEmailStatus === "sent"
   ? "Your guest order was submitted for review. We sent your customer tracking number to the email address you provided."
@@ -606,11 +608,11 @@ const orderErrorMessage =
         {
           turnstileSiteKey ? (
             <div class="cf-turnstile" data-sitekey={turnstileSiteKey} />
-          ) : (
+          ) : turnstileRequired ? (
             <p class="error-message">
               Guest order verification is not configured.
             </p>
-          )
+          ) : null
         }
       </div>
 

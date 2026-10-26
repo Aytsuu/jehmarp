@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { getServerEnv } from "@/lib/env";
+import { getServerEnv, turnstileFormToken } from "@/lib/env";
 import {
   assertEdgeFunctionSuccess,
 } from "@/lib/public-website/edge-function-response";
@@ -89,7 +89,7 @@ export function parseResellerApplicationFormData(
     expectedQuantityPerWeek: formData.get("expectedQuantityPerWeek"),
     contactNumber: formData.get("contactNumber"),
     message: formData.get("message") ?? undefined,
-    turnstileToken: formData.get("cf-turnstile-response") ?? "",
+    turnstileToken: turnstileFormToken(formData.get("cf-turnstile-response")),
   });
 
   if (!result.success) {
@@ -120,10 +120,12 @@ export async function submitResellerApplication(
   const env = getServerEnv();
   const fetcher = options.fetch ?? fetch;
 
-  await verifyTurnstileToken(env.turnstileSecretKey, payload.turnstileToken, {
-    fetch: fetcher,
-    clientIp: options.clientIp,
-  });
+  if (!env.turnstileDisabled) {
+    await verifyTurnstileToken(env.turnstileSecretKey, payload.turnstileToken, {
+      fetch: fetcher,
+      clientIp: options.clientIp,
+    });
+  }
 
   const headers = new Headers({
     Authorization: `Bearer ${env.supabaseServerKey}`,

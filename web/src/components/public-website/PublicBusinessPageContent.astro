@@ -3,6 +3,7 @@ import FormSubmissionFeedback from "@/components/ui/FormSubmissionFeedback.astro
 import PrivacyCollectionNotice from "@/components/public-website/PrivacyCollectionNotice.astro";
 import { RESELLER_APPLICATION_FEEDBACK_PARAMS } from "@/lib/client/form-submission-feedback-url";
 import { isAdminContentPreviewPath } from "@/lib/public-website/admin-content-preview";
+import { getPublicEnv } from "@/lib/env";
 import {
   plannedTransactionTypeLabels,
   type ResellerApplicationFeedback,
@@ -28,6 +29,7 @@ const disableFormSubmission = returnPath
   ? isAdminContentPreviewPath(returnPath)
   : false;
 const previewSubmissionTitle = "Submissions are disabled in content preview";
+const turnstileRequired = !getPublicEnv().turnstileDisabled;
 ---
 
 <div class="business-layout">
@@ -208,16 +210,16 @@ const previewSubmissionTitle = "Submissions are disabled in content preview";
           {
             turnstileSiteKey ? (
               <div class="cf-turnstile" data-sitekey={turnstileSiteKey} />
-            ) : (
+            ) : turnstileRequired ? (
               <p class="error-message">Reseller verification is not configured.</p>
-            )
+            ) : null
           }
         </div>
 
         <div class="button-row">
           <button
             type="submit"
-            disabled={disableFormSubmission || !turnstileSiteKey}
+            disabled={disableFormSubmission || (turnstileRequired && !turnstileSiteKey)}
             title={disableFormSubmission ? previewSubmissionTitle : undefined}
           >
             Submit application

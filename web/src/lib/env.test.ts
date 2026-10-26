@@ -133,6 +133,55 @@ describe("parseServerEnv", () => {
       turnstileSecretKey: "secret_key",
     });
   });
+
+  it("omits Turnstile keys in development when TURNSTILE=disable", () => {
+    const env = parseServerEnv({
+      DEV: true,
+      MODE: "development",
+      TURNSTILE: " DISABLE ",
+      LOCAL_SUPABASE_URL: "http://127.0.0.1:54321",
+      LOCAL_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_local_key",
+      LOCAL_SUPABASE_SECRET_KEY: "sb_secret_local_key",
+      PUBLIC_TURNSTILE_SITE_KEY: "site_key",
+      TURNSTILE_SECRET_KEY: "secret_key",
+    });
+
+    expect(env.turnstileDisabled).toBe(true);
+    expect(env.turnstileSiteKey).toBeUndefined();
+    expect(env.turnstileSecretKey).toBeUndefined();
+  });
+
+  it("keeps Turnstile keys when TURNSTILE=disable outside development mode", () => {
+    const env = parseServerEnv({
+      DEV: true,
+      MODE: "test",
+      TURNSTILE: "disable",
+      LOCAL_SUPABASE_URL: "http://127.0.0.1:54321",
+      LOCAL_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_local_key",
+      LOCAL_SUPABASE_SECRET_KEY: "sb_secret_local_key",
+      PUBLIC_TURNSTILE_SITE_KEY: "site_key",
+      TURNSTILE_SECRET_KEY: "secret_key",
+    });
+
+    expect(env.turnstileDisabled).toBeUndefined();
+    expect(env.turnstileSecretKey).toBe("secret_key");
+  });
+
+  it("keeps Turnstile keys outside development when TURNSTILE=disable", () => {
+    const env = parseServerEnv({
+      NODE_ENV: "production",
+      TURNSTILE: "disable",
+      PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+      PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_test_key",
+      SUPABASE_SECRET_KEY: "sb_secret_test_key",
+      PUBLIC_TURNSTILE_SITE_KEY: "site_key",
+      TURNSTILE_SECRET_KEY: "secret_key",
+    });
+
+    expect(env.turnstileDisabled).toBeUndefined();
+    expect(env.turnstileSiteKey).toBe("site_key");
+    expect(env.turnstileSecretKey).toBe("secret_key");
+  });
 });
 
 describe("parsePublicEnv", () => {
@@ -161,6 +210,7 @@ describe("parsePublicEnv", () => {
     vi.stubEnv("PUBLIC_SUPABASE_URL", "https://example.supabase.co");
     vi.stubEnv("PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test_key");
     vi.stubEnv("PUBLIC_TURNSTILE_SITE_KEY", "");
+    vi.stubEnv("TURNSTILE", "");
 
     expect(getPublicEnv()).toEqual({
       supabaseUrl: "http://127.0.0.1:54321",
@@ -175,6 +225,32 @@ describe("parsePublicEnv", () => {
       PUBLIC_TURNSTILE_SITE_KEY: "site_key",
     });
 
+    expect(env.turnstileSiteKey).toBe("site_key");
+    expect(env.turnstileDisabled).toBeUndefined();
+  });
+
+  it("disables Turnstile in development when TURNSTILE=disable", () => {
+    const env = parsePublicEnv({
+      DEV: true,
+      MODE: "development",
+      TURNSTILE: "disable",
+      PUBLIC_TURNSTILE_SITE_KEY: "site_key",
+    });
+
+    expect(env.turnstileDisabled).toBe(true);
+    expect(env.turnstileSiteKey).toBeUndefined();
+  });
+
+  it("keeps Turnstile enabled outside development when TURNSTILE=disable", () => {
+    const env = parsePublicEnv({
+      NODE_ENV: "production",
+      TURNSTILE: "disable",
+      PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+      PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_test_key",
+      PUBLIC_TURNSTILE_SITE_KEY: "site_key",
+    });
+
+    expect(env.turnstileDisabled).toBeUndefined();
     expect(env.turnstileSiteKey).toBe("site_key");
   });
 
